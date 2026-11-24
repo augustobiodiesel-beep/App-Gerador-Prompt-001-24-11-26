@@ -1,0 +1,695 @@
+@import "tailwindcss";
+
+:root {
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-d: 'Montserrat', 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  /* Paleta oficial UFMA (Manual de Identidade Visual 2024) */
+  --ufma-vinho: #8d0333;
+  --ufma-vinho-2: #b30b44;
+  --ufma-dourado: #d4b277;
+  --ufma-amarelo: #fec84d;
+  --ufma-verde: #0ab0ab;
+
+  --r: 18px;
+  --r-s: 12px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-theme='escuro'] {
+  color-scheme: dark;
+  --bg: #12060b;
+  --bg-2: #1c0a12;
+  --surface: rgba(37, 15, 24, 0.78);
+  --surface-2: rgba(52, 20, 34, 0.88);
+  --surface-solid: #230d17;
+  --input-bg: rgba(16, 5, 10, 0.72);
+  --border: rgba(212, 178, 119, 0.22);
+  --border-strong: rgba(212, 178, 119, 0.48);
+  --text: #faf5f0;
+  --muted: #d4c3bc;
+  --faint: #a28d85;
+  --accent: #d4b277;
+  --accent-2: #b30b44;
+  --accent-pri: #a5073e;
+  --accent-ink: #1a080e;
+  --teal: #0ab0ab;
+  --good: #2dd4bf;
+  --warn: #fec84d;
+  --bad: #fb7185;
+  --glow: 0 0 0 1px rgba(212, 178, 119, 0.28), 0 10px 36px -12px rgba(141, 3, 51, 0.65);
+  --shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.85);
+  --grid: rgba(212, 178, 119, 0.06);
+  --tile: linear-gradient(155deg, rgba(141, 3, 51, 0.92), rgba(79, 9, 34, 0.85));
+  --tile-border: rgba(212, 178, 119, 0.55);
+  --spot: radial-gradient(ellipse at 50% 0%, rgba(212, 178, 119, 0.2), transparent 62%);
+}
+
+:root[data-theme='claro'] {
+  color-scheme: light;
+  --bg: #faf7f2;
+  --bg-2: #f3ece2;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-2: #ffffff;
+  --surface-solid: #ffffff;
+  --input-bg: #ffffff;
+  --border: #e4d8c7;
+  --border-strong: #c9a971;
+  --text: #220c14;
+  --muted: #5d434b;
+  --faint: #846b73;
+  --accent: #8d0333;
+  --accent-2: #b30b44;
+  --accent-pri: #8d0333;
+  --accent-ink: #ffffff;
+  --teal: #088f8b;
+  --good: #0a8a76;
+  --warn: #b7791f;
+  --bad: #c81e45;
+  --glow: 0 0 0 1px rgba(141, 3, 51, 0.18), 0 12px 32px -14px rgba(141, 3, 51, 0.38);
+  --shadow: 0 18px 46px -28px rgba(72, 18, 36, 0.28);
+  --grid: rgba(141, 3, 51, 0.055);
+  --tile: linear-gradient(155deg, #8d0333, #660225);
+  --tile-border: rgba(212, 178, 119, 0.85);
+  --spot: radial-gradient(ellipse at 50% 0%, rgba(141, 3, 51, 0.11), transparent 62%);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg);
+    font-size: 15px;
+    line-height: 1.58;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(880px 460px at 88% -8%,
+        color-mix(in srgb, var(--ufma-vinho) 24%, transparent),
+        transparent 70%),
+      radial-gradient(660px 460px at -8% 28%,
+        color-mix(in srgb, var(--ufma-dourado) 14%, transparent),
+        transparent 70%),
+      radial-gradient(520px 380px at 50% 105%,
+        color-mix(in srgb, var(--ufma-verde) 10%, transparent),
+        transparent 72%),
+      linear-gradient(var(--bg), var(--bg-2));
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(ellipse at 50% 22%, #000 28%, transparent 82%);
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-d);
+    letter-spacing: -0.02em;
+  }
+
+  .font-mono-prompt {
+    font-family: var(--mono);
+  }
+}
+
+/* ---------- View entrance animation ---------- */
+.view-enter {
+  animation: viewEntra 0.35s var(--ease);
+}
+
+@keyframes viewEntra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Faixa e Cabeçalho Institucional ---------- */
+.inst-strip {
+  background: linear-gradient(90deg, #6e0228, #8d0333 55%, #720229);
+  border-bottom: 1px solid rgba(212, 178, 119, 0.45);
+  color: #faf5f0;
+}
+
+.ufma-header {
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.ufma-crest {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #a5073e, #630122);
+  border: 2px solid var(--ufma-dourado);
+  box-shadow: 0 4px 16px -4px rgba(141, 3, 51, 0.55);
+}
+
+/* Mobile bottom navigation bar (identica ao Caderno de Contexto) */
+@media (max-width: 860px) {
+  .ufma-nav-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    z-index: 40;
+    justify-content: space-around;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .ufma-main-wrap {
+    padding-bottom: 92px;
+  }
+}
+
+/* ---------- Hero e Tiles Flutuantes (assinatura visual do Caderno de Contexto) ---------- */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.hero-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 10px var(--teal);
+  display: inline-block;
+}
+
+.hero-grad {
+  background: linear-gradient(100deg, var(--ufma-dourado), var(--ufma-amarelo), var(--ufma-vinho-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:root[data-theme='claro'] .hero-grad {
+  background: linear-gradient(100deg, #8d0333, #b87d28);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-tiles {
+  position: relative;
+  height: 375px;
+}
+
+@media (max-width: 900px) {
+  .hero-tiles {
+    height: 270px;
+    overflow: hidden;
+  }
+}
+
+.hero-tiles::before {
+  content: '';
+  position: absolute;
+  inset: -40px -16px 0;
+  background: var(--spot);
+  pointer-events: none;
+}
+
+.hero-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #faf5f0;
+  background: var(--tile);
+  border: 1px solid var(--tile-border);
+  box-shadow:
+    0 10px 26px -8px rgba(141, 3, 51, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  animation: flutua 6s ease-in-out infinite;
+}
+
+.hero-tile.gold {
+  background: linear-gradient(155deg, #d4b277, #9f7c40);
+  color: #1a080e;
+}
+
+.hero-tile.teal {
+  background: linear-gradient(155deg, #0ab0ab, #067370);
+  color: #ffffff;
+}
+
+.hero-tile.fade {
+  opacity: 0.38;
+  box-shadow: none;
+}
+
+.hero-base {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  width: 72%;
+  height: 54px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+      color-mix(in srgb, var(--ufma-dourado) 42%, transparent),
+      transparent 70%);
+  filter: blur(6px);
+}
+
+@keyframes flutua {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hero-tile,
+  .view-enter {
+    animation: none;
+  }
+}
+
+.passo-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s var(--ease),
+    box-shadow 0.24s var(--ease),
+    filter 0.22s var(--ease);
+  will-change: transform;
+}
+
+.passo-card:hover {
+  border-color: var(--ufma-dourado);
+  transform: translateY(-4px) scale(1.022);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ufma-dourado) 60%, transparent),
+    0 18px 38px -14px rgba(141, 3, 51, 0.62);
+  z-index: 2;
+}
+
+.passo-card:active {
+  transform: translateY(-1px) scale(0.992);
+}
+
+.passo-num {
+  font-family: var(--font-d);
+  font-size: 52px;
+  font-weight: 800;
+  position: absolute;
+  right: 16px;
+  top: 4px;
+  color: var(--ufma-dourado);
+  opacity: 0.2;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ---------- Cards, Surfaces & Controls ---------- */
+.ufma-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ufma-subbox {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-solid));
+  border: 1px solid var(--border);
+  border-radius: var(--r-s);
+}
+
+.ufma-tealbox {
+  background: color-mix(in srgb, var(--teal) 9%, var(--surface-solid));
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--border));
+  border-radius: var(--r-s);
+}
+
+.ufma-warnbox {
+  background: color-mix(in srgb, var(--warn) 11%, var(--surface-solid));
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--border));
+  border-radius: var(--r-s);
+}
+
+.ufma-input {
+  width: 100%;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-s);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ufma-input::placeholder {
+  color: var(--faint);
+}
+
+.ufma-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.ufma-step-badge,
+.ico-chip {
+  background: var(--tile);
+  border: 1px solid var(--tile-border);
+  color: #faf5f0;
+  box-shadow: var(--glow);
+}
+
+/* ---------- Camadas Expansíveis (assinatura do Caderno de Contexto) ---------- */
+.camada-box {
+  border: 1px solid var(--border);
+  border-radius: var(--r-s);
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+.camada-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 13px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--text);
+}
+
+.camada-summary::-webkit-details-marker {
+  display: none;
+}
+
+.camada-summary::before {
+  content: '▸';
+  font-size: 12px;
+  color: var(--accent);
+}
+
+details.camada-box[open]>summary.camada-summary::before {
+  content: '▾';
+}
+
+details.camada-box[open]>summary.camada-summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.camada-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  padding: 1px 7px;
+}
+
+.camada-kind {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.camada-note {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 13px;
+  border-top: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* ---------- Animação global de destaque e elevação para frente em todos os botões ---------- */
+button:not(:disabled),
+a.ufma-btn,
+a.ufma-btn-pri,
+a.ufma-btn-teal,
+a.ufma-ia-pill {
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s var(--ease),
+    border-color 0.2s var(--ease),
+    background-color 0.2s var(--ease),
+    color 0.2s var(--ease),
+    filter 0.2s var(--ease);
+  will-change: transform;
+}
+
+button:not(:disabled):not(.passo-card):not(.ufma-ia-pill):hover {
+  transform: translateY(-2.5px) scale(1.032);
+  z-index: 3;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent),
+    0 12px 26px -12px color-mix(in srgb, var(--ufma-vinho) 58%, transparent);
+}
+
+button:not(:disabled):not(.passo-card):active,
+a.ufma-btn:active,
+a.ufma-btn-pri:active,
+a.ufma-btn-teal:active,
+a.ufma-ia-pill:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* ---------- Chips táteis idênticos ao Caderno de Contexto UFMA ---------- */
+.ufma-chip {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 0 0 var(--border);
+}
+
+.ufma-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.ufma-chip:not([aria-pressed='true'])::before {
+  content: '+ ';
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ufma-chip[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+  font-weight: 700;
+}
+
+.ufma-chip[aria-pressed='true']::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+
+.ufma-chip-input {
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  min-width: 210px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ufma-chip-input::placeholder {
+  color: var(--faint);
+}
+
+.ufma-chip-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ---------- Botões 3D Pill (Caderno de Contexto) ---------- */
+.ufma-btn {
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 3px 0 0 color-mix(in srgb, var(--border-strong) 70%, transparent);
+}
+
+.ufma-btn:not(:disabled):hover {
+  transform: translateY(-3px) scale(1.035);
+  border-color: var(--ufma-dourado);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ufma-dourado) 60%, transparent),
+    0 5px 0 0 color-mix(in srgb, var(--border-strong) 75%, transparent),
+    0 14px 30px -10px color-mix(in srgb, var(--ufma-vinho) 52%, transparent);
+  z-index: 3;
+}
+
+.ufma-btn-pri {
+  background: linear-gradient(135deg, #8d0333, #b30b44);
+  color: #faf5f0;
+  border: 1px solid rgba(212, 178, 119, 0.55);
+  box-shadow:
+    0 3px 0 0 #5c0120,
+    0 10px 28px -10px rgba(141, 3, 51, 0.65);
+}
+
+.ufma-btn-pri:not(:disabled):hover {
+  transform: translateY(-3.5px) scale(1.038);
+  filter: brightness(1.1);
+  border-color: var(--ufma-amarelo);
+  box-shadow:
+    0 5px 0 0 #5c0120,
+    0 0 0 1px rgba(254, 200, 77, 0.55),
+    0 16px 34px -10px rgba(141, 3, 51, 0.8);
+  z-index: 3;
+}
+
+.ufma-btn-teal {
+  background: linear-gradient(135deg, #088f8b, #0ab0ab);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ufma-btn-teal:not(:disabled):hover {
+  transform: translateY(-3px) scale(1.035);
+  filter: brightness(1.09);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(10, 176, 171, 0.6),
+    0 14px 28px -10px rgba(10, 176, 171, 0.58);
+  z-index: 3;
+}
+
+.ufma-ia-pill {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.ufma-ia-pill:hover {
+  border-color: var(--ia-color, var(--accent));
+  box-shadow:
+    0 0 0 1.5px var(--ia-color, var(--accent)),
+    0 12px 26px -10px var(--ia-color, var(--accent));
+  transform: translateY(-3px) scale(1.04);
+  z-index: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  button:not(:disabled):hover,
+  .passo-card:hover,
+  .ufma-btn:hover,
+  .ufma-btn-pri:hover,
+  .ufma-btn-teal:hover,
+  .ufma-ia-pill:hover {
+    transform: none !important;
+  }
+}
+
+.ufma-toast {
+  background: var(--ufma-vinho);
+  color: #faf5f0;
+  border: 1px solid var(--ufma-dourado);
+  box-shadow: var(--glow);
+}
+
+.ufma-footer {
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-2) 72%, transparent);
+  color: var(--faint);
+}
+
+/* Custom scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
