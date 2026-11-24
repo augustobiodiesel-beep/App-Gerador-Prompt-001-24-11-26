@@ -17,6 +17,7 @@ import {
 import { FREE_AI_PLATFORMS } from '../data/aiPlatforms';
 import { DEMO_PRESETS } from '../data/templates';
 import type { DemoPreset } from '../types/prompt';
+import { UfmaCrest } from './UfmaCrest';
 
 interface HomeViewProps {
   savedCount: number;
@@ -55,10 +56,13 @@ export function HomeView({
       {/* HERO com tiles flutuantes (identico ao Caderno de Contexto UFMA) */}
       <section className="grid grid-cols-1 items-center gap-7 py-3 lg:grid-cols-12 lg:py-5">
         <div className="lg:col-span-7">
-          <span className="hero-badge">
-            <i />
-            PROFCOMP-MA · UFMA · BNCC &amp; Legislação
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <UfmaCrest variant="hero" />
+            <span className="hero-badge">
+              <i />
+              PROFCOMP-MA · UFMA · BNCC &amp; Legislação
+            </span>
+          </div>
 
           <h1 className="font-display mt-4 mb-4 text-3xl font-extrabold leading-[1.08] tracking-tight text-[var(--text)] sm:text-5xl">
             Prompts profissionais com{' '}

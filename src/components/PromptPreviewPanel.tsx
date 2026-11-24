@@ -19,7 +19,9 @@ import {
 } from 'lucide-react';
 import { FREE_AI_PLATFORMS, type AIPlatformGroup } from '../data/aiPlatforms';
 import { estimatePromptStats, splitPromptIntoLayers } from '../engine/promptBuilder';
+import { exportPromptToRis } from '../services/zoteroParser';
 import type { PromptQualityAnalysis } from '../types/prompt';
+import { AiIcon } from './AiIcon';
 
 interface PromptPreviewPanelProps {
   promptText: string;
@@ -27,6 +29,9 @@ interface PromptPreviewPanelProps {
   isEditorialSlides: boolean;
   quality: PromptQualityAnalysis;
   templateName: string;
+  stageLabel: string;
+  componentName: string;
+  topic: string;
   onManualChange: (value: string) => void;
   onResetManualEdit: () => void;
   onSavePrompt: (customTitle: string) => void;
@@ -78,6 +83,9 @@ export function PromptPreviewPanel({
   isEditorialSlides,
   quality,
   templateName,
+  stageLabel,
+  componentName,
+  topic,
   onManualChange,
   onResetManualEdit,
   onSavePrompt,
@@ -147,8 +155,18 @@ export function PromptPreviewPanel({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDownload = (ext: 'md' | 'txt') => {
-    const blob = new Blob([promptText], { type: 'text/plain;charset=utf-8' });
+  const handleDownload = (ext: 'md' | 'txt' | 'ris') => {
+    const content =
+      ext === 'ris'
+        ? exportPromptToRis({
+          title: topic.trim() ? `${templateName}: ${topic.trim()}` : `${templateName} (${stageLabel})`,
+          stageLabel,
+          component: componentName,
+          templateName,
+          promptText,
+        })
+        : promptText;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const safeName = templateName
@@ -161,7 +179,11 @@ export function PromptPreviewPanel({
     a.download = `prompt-${safeName || 'pedagogico'}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
-    onNotify(`Arquivo .${ext} baixado!`);
+    onNotify(
+      ext === 'ris'
+        ? 'Arquivo .ris baixado — abra ou importe no Zotero!'
+        : `Arquivo .${ext} baixado!`
+    );
   };
 
   const handleConfirmSave = (e: React.FormEvent) => {
@@ -268,11 +290,10 @@ export function PromptPreviewPanel({
             <button
               type="button"
               onClick={() => setViewMode((prev) => (prev === 'camadas' ? 'editar' : 'camadas'))}
-              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                viewMode === 'editar'
-                  ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
-                  : 'border-[var(--border-strong)] bg-[var(--surface-solid)] text-[var(--text)] hover:border-[var(--accent)]'
-              }`}
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${viewMode === 'editar'
+                ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                : 'border-[var(--border-strong)] bg-[var(--surface-solid)] text-[var(--text)] hover:border-[var(--accent)]'
+                }`}
             >
               <Edit3 className="h-3 w-3" />
               {viewMode === 'editar' ? 'Ver camadas' : 'Ajuste fino'}
@@ -347,9 +368,8 @@ export function PromptPreviewPanel({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold ${
-                copied ? 'ufma-btn-teal' : 'ufma-btn-pri'
-              }`}
+              className={`flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold ${copied ? 'ufma-btn-teal' : 'ufma-btn-pri'
+                }`}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               <span>{copied ? 'Prompt copiado!' : 'Copiar prompt completo'}</span>
@@ -358,9 +378,8 @@ export function PromptPreviewPanel({
             <button
               type="button"
               onClick={() => setShowSaveForm((prev) => !prev)}
-              className={`flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold ${
-                justSaved ? 'ufma-btn-teal' : 'ufma-btn'
-              }`}
+              className={`flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold ${justSaved ? 'ufma-btn-teal' : 'ufma-btn'
+                }`}
             >
               {justSaved ? (
                 <Check className="h-4 w-4" />
@@ -411,6 +430,15 @@ export function PromptPreviewPanel({
                 <Download className="h-3 w-3" />
                 Baixar .txt
               </button>
+              <button
+                type="button"
+                onClick={() => handleDownload('ris')}
+                title="Baixar registro bibliográfico (.ris) para importar no Zotero"
+                className="ufma-btn inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold"
+              >
+                <Download className="h-3 w-3 text-[var(--accent)]" />
+                Zotero .ris
+              </button>
             </div>
 
             <button
@@ -460,11 +488,10 @@ export function PromptPreviewPanel({
                     key={tab.id}
                     type="button"
                     onClick={() => setQuickAiTab(tab.id)}
-                    className={`rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold transition-all ${
-                      active
-                        ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
-                        : 'border-[var(--border)] bg-[var(--surface-solid)] text-[var(--muted)] hover:text-[var(--text)]'
-                    }`}
+                    className={`rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold transition-all ${active
+                      ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                      : 'border-[var(--border)] bg-[var(--surface-solid)] text-[var(--muted)] hover:text-[var(--text)]'
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -480,12 +507,9 @@ export function PromptPreviewPanel({
                   title={`${ai.name} (${ai.company} • ${ai.origin}) — ${ai.freeTierNote}`}
                   style={{ '--ia-color': ai.color } as React.CSSProperties}
                   onClick={() => handleOpenAI(ai.name, ai.url)}
-                  className="ufma-ia-pill inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+                  className="ufma-ia-pill inline-flex items-center gap-1.5 rounded-full py-1 pr-2.5 pl-1.5 text-[11.5px] font-semibold"
                 >
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: ai.color }}
-                  />
+                  <AiIcon id={ai.id} color={ai.color} size="sm" />
                   <span>{ai.name}</span>
                   <ExternalLink className="h-2.5 w-2.5 opacity-60" />
                 </button>
@@ -529,11 +553,10 @@ export function PromptPreviewPanel({
               return (
                 <label
                   key={item.id}
-                  className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-all ${
-                    checked
-                      ? 'border-[var(--teal)] bg-[color-mix(in_srgb,var(--teal)_10%,var(--surface-solid))]'
-                      : 'border-[var(--border)] bg-[var(--surface-solid)] hover:border-[var(--border-strong)]'
-                  }`}
+                  className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-all ${checked
+                    ? 'border-[var(--teal)] bg-[color-mix(in_srgb,var(--teal)_10%,var(--surface-solid))]'
+                    : 'border-[var(--border)] bg-[var(--surface-solid)] hover:border-[var(--border-strong)]'
+                    }`}
                 >
                   <input
                     type="checkbox"

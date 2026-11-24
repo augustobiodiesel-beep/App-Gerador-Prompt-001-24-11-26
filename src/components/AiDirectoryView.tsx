@@ -15,6 +15,7 @@ import {
   type AIPlatform,
   type AIPlatformGroup,
 } from '../data/aiPlatforms';
+import { AiIcon } from './AiIcon';
 
 interface AiDirectoryViewProps {
   currentPrompt: string;
@@ -175,12 +176,7 @@ export function AiDirectoryView({ currentPrompt }: AiDirectoryViewProps) {
                 <div>
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-white shadow-xs"
-                        style={{ backgroundColor: ai.color }}
-                      >
-                        {ai.name.slice(0, 2).toUpperCase()}
-                      </span>
+                      <AiIcon id={ai.id} color={ai.color} size="md" />
                       <div>
                         <h3 className="font-display text-sm font-bold text-[var(--text)]">
                           {ai.name}

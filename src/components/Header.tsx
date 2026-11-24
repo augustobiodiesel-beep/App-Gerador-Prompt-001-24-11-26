@@ -105,7 +105,7 @@ export function Header({
             onClick={() => onChangeTab('inicio')}
             className="flex shrink-0 items-center gap-3 text-left transition-opacity hover:opacity-90"
           >
-            <UfmaCrest size={42} />
+            <UfmaCrest variant="header" />
             <div>
               <span className="font-display block text-[16.5px] font-extrabold leading-tight text-[var(--text)]">
                 Caderno de Contexto

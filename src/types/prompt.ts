@@ -57,6 +57,9 @@ export interface TemplateFieldDefinition {
   defaultValue: string | boolean | string[];
   options?: TemplateFieldOption[];
   chipOptions?: string[];
+  allowOther?: boolean;
+  otherPlaceholder?: string;
+  optional?: boolean;
 }
 
 export interface ResourceTemplate {
@@ -92,6 +95,7 @@ export interface SlideTypographyOption {
 
 export interface SlidePromptConfig {
   slideCount: string;
+  slideCountCustom?: string;
   audienceCustom: string;
   impactObjective: string;
   baseMaterial: string;
@@ -100,6 +104,7 @@ export interface SlidePromptConfig {
   customPaletteNote: string;
   typographyId: string;
   maxWordsPerSlide: string;
+  maxWordsCustom?: string;
   includePhotographyRules: boolean;
   photoSources: string;
   includeNarrativeArc: boolean;
@@ -110,15 +115,32 @@ export interface SlidePromptConfig {
   alignWithBncc: boolean;
 }
 
+export interface ZoteroReference {
+  id: string;
+  title: string;
+  authors: string[];
+  year?: string;
+  itemType?: string;
+  source?: string;
+  abstractNote?: string;
+  url?: string;
+  doi?: string;
+  tags?: string[];
+  notes?: string;
+}
+
 export interface PromptFormState {
   category: ResourceCategoryId;
   templateId: string;
-  stage: EducationStageId;
+  selectedTemplateIds: string[];
+  stage: EducationStageId | '';
   yearOrTrack: string;
   component: string;
   topic: string;
   selectedExtraDocs: string[];
   additionalDocuments: string;
+  selectedZoteroRefs: ZoteroReference[];
+  includeZoteroAbstracts: boolean;
   bloomLevel: BloomLevelId;
   methodology: string;
   tone: string;

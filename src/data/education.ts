@@ -1,5 +1,21 @@
 import type { BloomLevelId, BnccSkill, EducationStage, EducationStageId } from '../types/prompt';
 
+const BNCC_COMPUTACAO_EIXOS_ATE_9ANO = [
+  'Computação / Pensamento Computacional (BNCC)',
+  'Computação / Mundo Digital (BNCC)',
+  'Computação / Cultura Digital (BNCC)',
+];
+
+const BNCC_COMPUTACAO_COMPETENCIAS_EM = [
+  'Computação (BNCC EM - C1): Possibilidades e limites da Computação',
+  'Computação (BNCC EM - C2): Análise crítica, privacidade e segurança digital',
+  'Computação (BNCC EM - C3): Técnicas computacionais para problemas contemporâneos',
+  'Computação (BNCC EM - C4): Criação de conteúdos e artefatos computacionais',
+  'Computação (BNCC EM - C5): Projetos investigativos e decisões éticas',
+  'Computação (BNCC EM - C6): Expressão e partilha em mídias e tecnologias',
+  'Computação (BNCC EM - C7): Autonomia, cidadania e responsabilidade digital',
+];
+
 export const EDUCATION_STAGES: EducationStage[] = [
   {
     id: 'educacao_infantil',
@@ -21,7 +37,7 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Traços, sons, cores e formas',
       'Escuta, fala, pensamento e imaginação',
       'Espaços, tempos, quantidades, relações e transformações',
-      'Computação na Educação Infantil (BNCC Computação)',
+      ...BNCC_COMPUTACAO_EIXOS_ATE_9ANO,
     ],
   },
   {
@@ -43,7 +59,7 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Arte',
       'Educação Física',
       'Ensino Religioso',
-      'Computação / Pensamento Computacional (BNCC)',
+      ...BNCC_COMPUTACAO_EIXOS_ATE_9ANO,
       'Projeto Interdisciplinar',
     ],
   },
@@ -67,7 +83,7 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Arte',
       'Educação Física',
       'Ensino Religioso',
-      'Computação / Cultura Digital (BNCC)',
+      ...BNCC_COMPUTACAO_EIXOS_ATE_9ANO,
       'Projeto Interdisciplinar',
     ],
   },
@@ -98,7 +114,7 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Geografia (Ciências Humanas)',
       'Filosofia / Sociologia',
       'Projeto de Vida',
-      'Computação / Robótica / Ciência de Dados (BNCC)',
+      ...BNCC_COMPUTACAO_COMPETENCIAS_EM,
     ],
   },
   {
@@ -130,6 +146,7 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Logística / Edificações / Eletrotécnica',
       'Empreendedorismo e Inovação Tecnológica',
       'Prática Profissional / Projeto Integrador',
+      ...BNCC_COMPUTACAO_COMPETENCIAS_EM,
     ],
   },
   {
@@ -155,13 +172,18 @@ export const EDUCATION_STAGES: EducationStage[] = [
       'Geografia e Território Local',
       'Língua Inglesa / Espanhola',
       'Arte e Cultura Popular',
-      'Inclusão Digital e Computação (BNCC)',
       'Projeto de Vida e Mundo do Trabalho',
+      ...BNCC_COMPUTACAO_COMPETENCIAS_EM,
     ],
   },
 ];
 
-export const OPTIONAL_REFERENCE_DOCUMENTS: { id: string; label: string; fullReference: string }[] = [
+export const OPTIONAL_REFERENCE_DOCUMENTS: {
+  id: string;
+  label: string;
+  fullReference: string;
+  onlyStages?: EducationStageId[];
+}[] = [
   {
     id: 'bncc_computacao',
     label: 'BNCC Computação (Res. CNE/CEB nº 1/2022)',
@@ -183,6 +205,7 @@ export const OPTIONAL_REFERENCE_DOCUMENTS: { id: string; label: string; fullRefe
     id: 'enem',
     label: 'Matriz de Referência ENEM',
     fullReference: 'Matriz de Referência do ENEM (INEP/MEC — Eixos Cognitivos e Competências)',
+    onlyStages: ['ensino_medio', 'ensino_tecnico'],
   },
   {
     id: 'lbi',
@@ -208,6 +231,10 @@ export const OPTIONAL_REFERENCE_DOCUMENTS: { id: string; label: string; fullRefe
       'Projeto Político-Pedagógico (PPP) da escola ou documento/PDF que o(a) docente anexará nesta conversa',
   },
 ];
+
+export function isEnemStage(stage: EducationStageId | ''): boolean {
+  return stage === 'ensino_medio' || stage === 'ensino_tecnico';
+}
 
 export const BNCC_GENERAL_COMPETENCIES: { id: number; title: string; summary: string }[] = [
   { id: 1, title: 'Conhecimento', summary: 'Valorizar e utilizar conhecimentos historicamente construídos.' },
@@ -485,6 +512,11 @@ export const OUTPUT_FORMAT_OPTIONS: string[] = [
   'Material pronto para o aluno (enunciados claros + espaço de resposta) + guia do professor ao final',
 ];
 
-export function getStageById(stageId: EducationStageId): EducationStage {
-  return EDUCATION_STAGES.find((s) => s.id === stageId) ?? EDUCATION_STAGES[2];
+export function findStageById(stageId: EducationStageId | ''): EducationStage | undefined {
+  if (!stageId) return undefined;
+  return EDUCATION_STAGES.find((s) => s.id === stageId);
+}
+
+export function getStageById(stageId: EducationStageId | ''): EducationStage {
+  return findStageById(stageId) ?? EDUCATION_STAGES[2];
 }

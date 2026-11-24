@@ -12,15 +12,19 @@ import { PromptPreviewPanel } from './components/PromptPreviewPanel';
 import { TemplateSpecificFields } from './components/TemplateSpecificFields';
 import { UfmaCrest } from './components/UfmaCrest';
 import { FREE_AI_PLATFORMS } from './data/aiPlatforms';
-import { getStageById } from './data/education';
+import { findStageById, isEnemStage } from './data/education';
+import { createInitialPromptState, getTemplateById } from './data/templates';
 import {
-  createInitialPromptState,
-  getDefaultSpecificValues,
-  getTemplateById,
-  getTemplatesByCategory,
-} from './data/templates';
-import { analyzePromptQuality, buildPrompt } from './engine/promptBuilder';
-import { loadSavedPrompts, persistSavedPrompts } from './services/storage';
+  analyzePromptQuality,
+  buildPrompt,
+  resolveSelectedTemplates,
+} from './engine/promptBuilder';
+import {
+  loadSavedPrompts,
+  loadZoteroLibrary,
+  persistSavedPrompts,
+  persistZoteroLibrary,
+} from './services/storage';
 import type {
   DemoPreset,
   EducationStageId,
@@ -28,6 +32,7 @@ import type {
   ResourceCategoryId,
   SavedPrompt,
   SlidePromptConfig,
+  ZoteroReference,
 } from './types/prompt';
 
 function getInitialTheme(): ThemeMode {
@@ -45,6 +50,7 @@ export function App() {
   const [state, setState] = useState<PromptFormState>(() => createInitialPromptState());
   const [manualPromptText, setManualPromptText] = useState<string | null>(null);
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(() => loadSavedPrompts());
+  const [zoteroLibrary, setZoteroLibrary] = useState<ZoteroReference[]>(() => loadZoteroLibrary());
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
@@ -71,10 +77,34 @@ export function App() {
     persistSavedPrompts(savedPrompts);
   }, [savedPrompts]);
 
-  const activeTemplate = useMemo(() => getTemplateById(state.templateId), [state.templateId]);
+  useEffect(() => {
+    persistZoteroLibrary(zoteroLibrary);
+  }, [zoteroLibrary]);
+
+  const handleImportZoteroRefs = (incoming: ZoteroReference[]) => {
+    setZoteroLibrary((prev) => {
+      const existing = new Set(prev.map((r) => `${r.title.toLowerCase()}::${r.year ?? ''}`));
+      const fresh = incoming.filter(
+        (r) => !existing.has(`${r.title.toLowerCase()}::${r.year ?? ''}`)
+      );
+      return [...fresh, ...prev];
+    });
+  };
+
+  const selectedTemplates = useMemo(() => resolveSelectedTemplates(state), [state]);
+  const hasSlides = selectedTemplates.some((t) => t.isEditorialSlides);
+  const isEditorialSlidesOnly = selectedTemplates.length === 1 && hasSlides;
   const generatedPrompt = useMemo(() => buildPrompt(state), [state]);
   const displayPrompt = manualPromptText ?? generatedPrompt;
   const quality = useMemo(() => analyzePromptQuality(state), [state]);
+
+  const activeStage = findStageById(state.stage);
+  const templateSummaryName =
+    selectedTemplates.length === 0
+      ? 'Prompt Pedagógico'
+      : selectedTemplates.length === 1
+        ? selectedTemplates[0].shortName
+        : `${selectedTemplates[0].shortName} + ${selectedTemplates.length - 1}`;
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'escuro' ? 'claro' : 'escuro'));
@@ -89,37 +119,62 @@ export function App() {
     setState((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Alterna apenas a aba de categoria visualizada sem apagar seleções de outras categorias
   const handleSelectCategory = (category: ResourceCategoryId) => {
-    const firstTemplate = getTemplatesByCategory(category)[0];
-    if (!firstTemplate) return;
-    setManualPromptText(null);
     setState((prev) => ({
       ...prev,
       category,
-      templateId: firstTemplate.id,
-      specificValues: getDefaultSpecificValues(firstTemplate),
     }));
   };
 
-  const handleSelectTemplate = (templateId: string) => {
-    const tpl = getTemplateById(templateId);
+  // Multisseleção de recursos em qualquer categoria
+  const handleToggleTemplate = (templateId: string) => {
     setManualPromptText(null);
-    setState((prev) => ({
-      ...prev,
-      category: tpl.category,
-      templateId: tpl.id,
-      specificValues: getDefaultSpecificValues(tpl),
-    }));
+    setState((prev) => {
+      const current = prev.selectedTemplateIds ?? [];
+      const exists = current.includes(templateId);
+      const nextIds = exists
+        ? current.filter((id) => id !== templateId)
+        : [...current, templateId];
+      return {
+        ...prev,
+        selectedTemplateIds: nextIds,
+        templateId: nextIds[0] ?? '',
+      };
+    });
+  };
+
+  const handleResetForm = () => {
+    setManualPromptText(null);
+    setState(createInitialPromptState());
+    notify('Formulário limpo! Pronto para montar um novo prompt.');
   };
 
   const handleChangeStage = (stageId: EducationStageId) => {
-    const stageMeta = getStageById(stageId);
-    setState((prev) => ({
-      ...prev,
-      stage: stageId,
-      yearOrTrack: stageMeta.yearsOrTracks[0],
-      component: stageMeta.components[0],
-    }));
+    const allowEnem = isEnemStage(stageId);
+    setState((prev) => {
+      const nextExtraDocs = allowEnem
+        ? prev.selectedExtraDocs
+        : (prev.selectedExtraDocs ?? []).filter((docId) => docId !== 'enem');
+
+      const nextSpecificValues = { ...prev.specificValues };
+      if (!allowEnem) {
+        for (const [key, val] of Object.entries(nextSpecificValues)) {
+          if (typeof val === 'string' && /\bENEM\b/i.test(val)) {
+            nextSpecificValues[key] = '';
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        stage: stageId,
+        yearOrTrack: '',
+        component: '',
+        selectedExtraDocs: nextExtraDocs,
+        specificValues: nextSpecificValues,
+      };
+    });
   };
 
   const handleUpdateSpecificValue = (key: string, value: string | boolean | string[]) => {
@@ -146,14 +201,18 @@ export function App() {
   };
 
   const handleApplyPreset = (preset: DemoPreset) => {
-    const tpl = getTemplateById(preset.state.templateId);
     const base = createInitialPromptState();
+    const presetIds =
+      preset.state.selectedTemplateIds && preset.state.selectedTemplateIds.length > 0
+        ? preset.state.selectedTemplateIds
+        : [preset.state.templateId];
     setManualPromptText(null);
     setState({
       ...base,
       ...preset.state,
+      selectedTemplateIds: presetIds,
+      templateId: presetIds[0] ?? '',
       specificValues: {
-        ...getDefaultSpecificValues(tpl),
         ...(preset.state.specificValues ?? {}),
       },
       slideConfig: {
@@ -168,19 +227,24 @@ export function App() {
   const handleQuickOpenSlides = () => {
     const tpl = getTemplateById('slides_editorial');
     setManualPromptText(null);
-    setState((prev) => ({
-      ...prev,
-      category: tpl.category,
-      templateId: tpl.id,
-    }));
+    setState((prev) => {
+      const current = prev.selectedTemplateIds ?? [];
+      const nextIds = current.includes(tpl.id) ? current : [...current, tpl.id];
+      return {
+        ...prev,
+        category: tpl.category,
+        selectedTemplateIds: nextIds,
+        templateId: nextIds[0] ?? tpl.id,
+      };
+    });
     navigateTab('builder');
   };
 
   const handleSavePrompt = (customTitle: string) => {
-    const stage = getStageById(state.stage);
+    const stageShort = activeStage?.shortLabel ?? 'Educação Básica';
     const fallbackTitle = state.topic.trim()
-      ? `${activeTemplate.shortName}: ${state.topic.trim()}`
-      : `${activeTemplate.shortName} (${stage.shortLabel} • ${state.component})`;
+      ? `${templateSummaryName}: ${state.topic.trim()}`
+      : `${templateSummaryName} (${stageShort}${state.component ? ` • ${state.component}` : ''})`;
 
     const now = new Date().toISOString();
     const newItem: SavedPrompt = {
@@ -194,7 +258,11 @@ export function App() {
       isFavorite: false,
       createdAt: now,
       updatedAt: now,
-      tags: [activeTemplate.shortName, stage.shortLabel, state.component],
+      tags: [
+        ...selectedTemplates.map((t) => t.shortName),
+        stageShort,
+        ...(state.component ? [state.component] : []),
+      ],
       state: structuredClone(state),
     };
 
@@ -214,11 +282,21 @@ export function App() {
 
   const handleLoadFromLibrary = (item: SavedPrompt) => {
     const base = createInitialPromptState();
+    const cloned = structuredClone(item.state);
+    const normalizedIds =
+      cloned.selectedTemplateIds && cloned.selectedTemplateIds.length > 0
+        ? cloned.selectedTemplateIds
+        : cloned.templateId
+          ? [cloned.templateId]
+          : [];
     setState({
       ...base,
-      ...structuredClone(item.state),
-      selectedExtraDocs: item.state.selectedExtraDocs ?? [],
-      additionalDocuments: item.state.additionalDocuments ?? '',
+      ...cloned,
+      selectedTemplateIds: normalizedIds,
+      templateId: normalizedIds[0] ?? '',
+      selectedExtraDocs: cloned.selectedExtraDocs ?? [],
+      additionalDocuments: cloned.additionalDocuments ?? '',
+      selectedZoteroRefs: cloned.selectedZoteroRefs ?? [],
     });
     setManualPromptText(item.isManuallyEdited ? item.promptText : null);
     setMobilePanel('form');
@@ -234,6 +312,13 @@ export function App() {
     });
   };
 
+  const switchMobilePanel = (panel: 'form' | 'preview', scrollTop = false) => {
+    setMobilePanel(panel);
+    if (scrollTop) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen text-[var(--text)]">
       <Header
@@ -241,7 +326,7 @@ export function App() {
         onChangeTab={navigateTab}
         savedCount={savedPrompts.length}
         aiCount={FREE_AI_PLATFORMS.length}
-        isSlidesActive={Boolean(activeTemplate.isEditorialSlides)}
+        isSlidesActive={hasSlides}
         onQuickOpenSlides={handleQuickOpenSlides}
         theme={theme}
         onToggleTheme={handleToggleTheme}
@@ -270,17 +355,17 @@ export function App() {
                 Monte seu prompt em camadas
               </h1>
               <p className="mt-1 max-w-3xl text-sm text-[var(--muted)]">
-                Escolha o recurso didático ou documental, informe o tema e a turma. A IA recebe o
-                comando fixo para consultar a BNCC automaticamente e selecionar competências e
-                habilidades oficiais.
+                Selecione um ou mais recursos didáticos, avaliativos ou documentais, informe o tema
+                e a turma. A IA recebe o comando fixo para consultar a BNCC automaticamente e
+                selecionar competências e habilidades oficiais.
               </p>
             </div>
 
-            {/* Mobile view switcher */}
+            {/* Mobile top view switcher */}
             <div className="mb-4 grid grid-cols-2 gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 lg:hidden">
               <button
                 type="button"
-                onClick={() => setMobilePanel('form')}
+                onClick={() => switchMobilePanel('form')}
                 className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold ${
                   mobilePanel === 'form'
                     ? 'bg-[var(--ufma-vinho)] text-[#FAF5F0]'
@@ -292,7 +377,7 @@ export function App() {
               </button>
               <button
                 type="button"
-                onClick={() => setMobilePanel('preview')}
+                onClick={() => switchMobilePanel('preview')}
                 className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold ${
                   mobilePanel === 'preview'
                     ? 'bg-[var(--ufma-vinho)] text-[#FAF5F0]'
@@ -312,21 +397,26 @@ export function App() {
               >
                 <CategoryTemplatePicker
                   selectedCategory={state.category}
-                  selectedTemplateId={state.templateId}
+                  selectedTemplateIds={state.selectedTemplateIds}
                   onSelectCategory={handleSelectCategory}
-                  onSelectTemplate={handleSelectTemplate}
+                  onToggleTemplate={handleToggleTemplate}
                   onApplyPreset={handleApplyPreset}
+                  onResetForm={handleResetForm}
                 />
 
                 <EducationContextSection
                   state={state}
-                  isEditorialSlides={Boolean(activeTemplate.isEditorialSlides)}
+                  isEditorialSlides={hasSlides}
+                  zoteroLibrary={zoteroLibrary}
+                  onImportZoteroRefs={handleImportZoteroRefs}
+                  onClearZoteroLibrary={() => setZoteroLibrary([])}
                   onChangeStage={handleChangeStage}
                   onUpdateField={updateField}
+                  onNotify={notify}
                 />
 
                 <TemplateSpecificFields
-                  template={activeTemplate}
+                  templates={selectedTemplates}
                   state={state}
                   onUpdateSpecificValue={handleUpdateSpecificValue}
                   onUpdateSlideConfig={handleUpdateSlideConfig}
@@ -335,9 +425,37 @@ export function App() {
 
                 <PedagogicalRefinementSection
                   state={state}
-                  isEditorialSlides={Boolean(activeTemplate.isEditorialSlides)}
+                  isEditorialSlidesOnly={isEditorialSlidesOnly}
                   onUpdateField={updateField}
                 />
+
+                {/* Mobile bottom view switcher (somente smartphone, abaixo do Passo 4) */}
+                <div className="grid grid-cols-2 gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => switchMobilePanel('form', true)}
+                    className={`flex items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold ${
+                      mobilePanel === 'form'
+                        ? 'bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                        : 'text-[var(--muted)]'
+                    }`}
+                  >
+                    <Sliders className="h-3.5 w-3.5" />
+                    Configurar Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMobilePanel('preview', true)}
+                    className={`flex items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold ${
+                      mobilePanel === 'preview'
+                        ? 'bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                        : 'text-[var(--muted)]'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Ver Prompt ({quality.score}%)
+                  </button>
+                </div>
               </div>
 
               <div
@@ -348,9 +466,12 @@ export function App() {
                 <PromptPreviewPanel
                   promptText={displayPrompt}
                   isManuallyEdited={manualPromptText !== null}
-                  isEditorialSlides={Boolean(activeTemplate.isEditorialSlides)}
+                  isEditorialSlides={isEditorialSlidesOnly}
                   quality={quality}
-                  templateName={activeTemplate.shortName}
+                  templateName={templateSummaryName}
+                  stageLabel={activeStage?.shortLabel ?? 'Educação Básica'}
+                  componentName={state.component}
+                  topic={state.topic}
                   onManualChange={(val) => setManualPromptText(val)}
                   onResetManualEdit={() => setManualPromptText(null)}
                   onSavePrompt={handleSavePrompt}
@@ -398,11 +519,11 @@ export function App() {
         {toastMsg}
       </div>
 
-      {/* Rodapé Institucional com créditos UFMA / PROFCOMP-MA, educ.nekoweb.org e MEC RED */}
+      {/* Rodapé Institucional com logo oficial UFMA + créditos PROFCOMP-MA, educ.nekoweb.org e MEC RED */}
       <footer className="ufma-footer mt-12 py-8 text-xs leading-relaxed">
         <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-6 px-4 sm:px-5 md:grid-cols-12">
-          <div className="flex items-start gap-3.5 md:col-span-6">
-            <UfmaCrest size={48} compactLabel />
+          <div className="flex flex-col items-start gap-3.5 sm:flex-row md:col-span-6">
+            <UfmaCrest variant="footer" />
             <div className="space-y-1.5">
               <p className="text-[var(--text)]">
                 <strong>Caderno de Contexto · PromptDocente</strong> — Produto Educacional

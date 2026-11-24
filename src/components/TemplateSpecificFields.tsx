@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Camera,
   CheckSquare,
+  Layers,
   ListOrdered,
   Palette,
   Plus,
@@ -9,15 +10,21 @@ import {
   Sparkles,
   Type,
 } from 'lucide-react';
+import { isEnemStage } from '../data/education';
 import {
   SLIDE_AESTHETIC_PROFILES,
   SLIDE_PALETTE_OPTIONS,
   SLIDE_TYPOGRAPHY_OPTIONS,
 } from '../data/templates';
-import type { PromptFormState, ResourceTemplate, SlidePromptConfig } from '../types/prompt';
+import type {
+  PromptFormState,
+  ResourceTemplate,
+  SlidePromptConfig,
+  TemplateFieldDefinition,
+} from '../types/prompt';
 
 interface TemplateSpecificFieldsProps {
-  template: ResourceTemplate;
+  templates: ResourceTemplate[];
   state: PromptFormState;
   onUpdateSpecificValue: (key: string, value: string | boolean | string[]) => void;
   onUpdateSlideConfig: <K extends keyof SlidePromptConfig>(
@@ -27,8 +34,10 @@ interface TemplateSpecificFieldsProps {
   onUpdateClassContext: (value: string) => void;
 }
 
+export const CUSTOM_OPTION_SENTINEL = '__outro__';
+
 export function TemplateSpecificFields({
-  template,
+  templates,
   state,
   onUpdateSpecificValue,
   onUpdateSlideConfig,
@@ -36,35 +45,255 @@ export function TemplateSpecificFields({
 }: TemplateSpecificFieldsProps) {
   const [customChipInputs, setCustomChipInputs] = useState<Record<string, string>>({});
 
-  if (template.isEditorialSlides) {
-    const cfg = state.slideConfig;
+  const hasSlides = templates.some((t) => t.isEditorialSlides);
+  const nonSlideTemplates = templates.filter((t) => !t.isEditorialSlides);
+  const hasPrivacyTemplate = templates.some((t) => t.isDocumentWithPrivacy);
+  const allowEnem = isEnemStage(state.stage);
 
+  if (templates.length === 0) {
     return (
-      <section className="ufma-card border-[var(--border-strong)] p-5 sm:p-6">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="ufma-step-badge flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold">
-              3
-            </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-base font-bold text-[var(--text)] sm:text-lg">
-                  Direção de Arte e Estrutura dos Slides
-                </h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#D4B277]/60 bg-[#8D0333] px-2.5 py-0.5 text-[10px] font-bold text-[#FEC84D]">
-                  <Sparkles className="h-3 w-3" />
-                  Modelo Apple / Kinfolk / Monocle
-                </span>
-              </div>
-              <p className="text-xs text-[var(--muted)]">
-                Configurações fiéis ao modelo editorial premium de apresentação.
-              </p>
-            </div>
+      <section className="ufma-card p-5 sm:p-6">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="ufma-step-badge flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold">
+            3
+          </span>
+          <div>
+            <h2 className="font-display text-base font-bold text-[var(--text)] sm:text-lg">
+              Detalhes Específicos dos Recursos
+            </h2>
+            <p className="text-xs text-[var(--muted)]">
+              Os campos personalizados aparecem conforme os recursos selecionados no Passo 1.
+            </p>
           </div>
         </div>
+        <div className="ufma-subbox flex items-center gap-3 p-4 text-xs text-[var(--muted)]">
+          <Layers className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+          <p>
+            Selecione <strong>um ou mais recursos</strong> no Passo 1 (ex.: Plano de Aula, Slides
+            Premium, Prova Formal, Banco de Questões...) para configurar seus detalhes aqui.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
-        {/* Conteúdo */}
-        <div className="ufma-subbox mb-5 space-y-3.5 p-4">
+  const renderField = (field: TemplateFieldDefinition, idPrefix: string) => {
+    const val = state.specificValues[field.key] ?? field.defaultValue;
+    const inputId = `${idPrefix}-${field.key}`;
+
+    if (field.type === 'chips') {
+      const baseOptions = field.chipOptions ?? [];
+      const selectedList: string[] = Array.isArray(val)
+        ? val
+        : typeof val === 'string' && val.trim()
+          ? val
+              .split(/[;,]/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+      const customSelected = selectedList.filter((item) => !baseOptions.includes(item));
+      const allOptions = [...baseOptions, ...customSelected];
+      const draft = customChipInputs[field.key] ?? '';
+
+      const toggleChip = (option: string) => {
+        const exists = selectedList.includes(option);
+        const next = exists
+          ? selectedList.filter((item) => item !== option)
+          : [...selectedList, option];
+        onUpdateSpecificValue(field.key, next);
+      };
+
+      const addCustomChip = () => {
+        const cleaned = draft.trim().replace(/\s+/g, ' ');
+        if (!cleaned) return;
+        const existingMatch = allOptions.find(
+          (item) => item.toLowerCase() === cleaned.toLowerCase()
+        );
+        if (existingMatch) {
+          if (!selectedList.includes(existingMatch)) {
+            onUpdateSpecificValue(field.key, [...selectedList, existingMatch]);
+          }
+        } else {
+          onUpdateSpecificValue(field.key, [...selectedList, cleaned]);
+        }
+        setCustomChipInputs((prev) => ({ ...prev, [field.key]: '' }));
+      };
+
+      return (
+        <div key={field.key}>
+          <span className="mb-2.5 block text-xs font-bold text-[var(--text)]">{field.label}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {allOptions.map((option) => {
+              const isSelected = selectedList.includes(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => toggleChip(option)}
+                  className="ufma-chip"
+                >
+                  {option}
+                </button>
+              );
+            })}
+
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={draft}
+                onChange={(e) =>
+                  setCustomChipInputs((prev) => ({ ...prev, [field.key]: e.target.value }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomChip();
+                  }
+                }}
+                placeholder="Adicionar outra opção..."
+                aria-label={`Adicionar outra opção em ${field.label}`}
+                className="ufma-chip-input"
+              />
+              <button
+                type="button"
+                onClick={addCustomChip}
+                className="ufma-btn inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Adicionar
+              </button>
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (field.type === 'checkbox') {
+      return (
+        <label
+          key={field.key}
+          className="ufma-subbox flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-[var(--text)]"
+        >
+          <input
+            type="checkbox"
+            checked={Boolean(val)}
+            onChange={(e) => onUpdateSpecificValue(field.key, e.target.checked)}
+            className="h-4 w-4 accent-[var(--teal)]"
+          />
+          <span>{field.label}</span>
+        </label>
+      );
+    }
+
+    if (field.type === 'select' && field.options) {
+      const filteredOptions = field.options.filter(
+        (opt) => allowEnem || !/\bENEM\b/i.test(`${opt.value} ${opt.label}`)
+      );
+      const stringVal = String(val ?? '');
+      const otherKey = `${field.key}__other`;
+      const otherVal = String(state.specificValues[otherKey] ?? '');
+      const isValidOption =
+        stringVal === '' ||
+        stringVal === CUSTOM_OPTION_SENTINEL ||
+        filteredOptions.some((o) => o.value === stringVal);
+      const effectiveSelectVal = isValidOption ? stringVal : '';
+
+      return (
+        <div key={field.key}>
+          <label htmlFor={inputId} className="mb-1.5 block text-xs font-semibold text-[var(--text)]">
+            {field.label}
+          </label>
+          <select
+            id={inputId}
+            value={effectiveSelectVal}
+            onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
+            className="ufma-input px-3 py-2.5 text-sm"
+          >
+            <option value="">
+              {field.optional ? 'Selecione (opcional)...' : 'Selecione uma opção...'}
+            </option>
+            {filteredOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+            {field.allowOther && (
+              <option value={CUSTOM_OPTION_SENTINEL}>Outro (personalizar)...</option>
+            )}
+          </select>
+
+          {field.allowOther && effectiveSelectVal === CUSTOM_OPTION_SENTINEL && (
+            <input
+              type="text"
+              value={otherVal}
+              onChange={(e) => onUpdateSpecificValue(otherKey, e.target.value)}
+              placeholder={field.otherPlaceholder || 'Especifique sua opção personalizada...'}
+              className="ufma-input mt-2 px-3.5 py-2 text-sm"
+            />
+          )}
+          {field.helperText && (
+            <p className="mt-1 text-[11px] text-[var(--faint)]">{field.helperText}</p>
+          )}
+        </div>
+      );
+    }
+
+    if (field.type === 'textarea') {
+      return (
+        <div key={field.key}>
+          <label htmlFor={inputId} className="mb-1.5 block text-xs font-semibold text-[var(--text)]">
+            {field.label}
+          </label>
+          <textarea
+            id={inputId}
+            rows={3}
+            value={String(val ?? '')}
+            onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
+            placeholder={field.placeholder}
+            className="ufma-input px-3.5 py-2.5 text-sm"
+          />
+          {field.helperText && (
+            <p className="mt-1 text-[11px] text-[var(--faint)]">{field.helperText}</p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div key={field.key}>
+        <label htmlFor={inputId} className="mb-1.5 block text-xs font-semibold text-[var(--text)]">
+          {field.label}
+        </label>
+        <input
+          id={inputId}
+          type={field.type === 'number' ? 'number' : 'text'}
+          min={field.type === 'number' ? 0 : undefined}
+          value={String(val ?? '')}
+          onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
+          placeholder={field.placeholder}
+          className="ufma-input px-3.5 py-2.5 text-sm"
+        />
+      </div>
+    );
+  };
+
+  const renderSlidesConfigBlock = () => {
+    const cfg = state.slideConfig;
+    const isCustomSlideCount = cfg.slideCount === CUSTOM_OPTION_SENTINEL;
+    const isCustomMaxWords = cfg.maxWordsPerSlide === CUSTOM_OPTION_SENTINEL;
+
+    return (
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#D4B277]/60 bg-[#8D0333] px-2.5 py-0.5 text-[10px] font-bold text-[#FEC84D]">
+            <Sparkles className="h-3 w-3" />
+            Slides Editoriais Premium — Modelo Apple / Kinfolk / Monocle
+          </span>
+        </div>
+
+        {/* Bloco 1 — Conteúdo */}
+        <div className="ufma-subbox space-y-3.5 p-4">
           <h3 className="text-[11px] font-bold tracking-[0.1em] text-[var(--accent)] uppercase">
             Bloco 1 — Conteúdo da Apresentação
           </h3>
@@ -83,11 +312,22 @@ export function TemplateSpecificFields({
                 onChange={(e) => onUpdateSlideConfig('slideCount', e.target.value)}
                 className="ufma-input px-3 py-2 text-sm"
               >
+                <option value="">Selecione a quantidade...</option>
                 <option value="8–10">8–10 slides (aula curta / 1 tempo)</option>
                 <option value="10–15">10–15 slides (padrão do modelo)</option>
                 <option value="12">12 slides (exato)</option>
                 <option value="15–20">15–20 slides (aula dupla / seminário)</option>
+                <option value={CUSTOM_OPTION_SENTINEL}>Outra quantidade (personalizar)...</option>
               </select>
+              {isCustomSlideCount && (
+                <input
+                  type="text"
+                  value={cfg.slideCountCustom ?? ''}
+                  onChange={(e) => onUpdateSlideConfig('slideCountCustom', e.target.value)}
+                  placeholder="Ex.: 6 slides, 18 slides ou 20–25 slides..."
+                  className="ufma-input mt-2 px-3 py-2 text-sm"
+                />
+              )}
             </div>
 
             <div>
@@ -103,10 +343,21 @@ export function TemplateSpecificFields({
                 onChange={(e) => onUpdateSlideConfig('maxWordsPerSlide', e.target.value)}
                 className="ufma-input px-3 py-2 text-sm"
               >
+                <option value="">Selecione o limite...</option>
                 <option value="20">Máx. 20 palavras (ultra minimalista)</option>
                 <option value="25">Máx. 25 palavras (padrão do modelo)</option>
                 <option value="35">Máx. 35 palavras (explicação didática leve)</option>
+                <option value={CUSTOM_OPTION_SENTINEL}>Outra quantidade (personalizar)...</option>
               </select>
+              {isCustomMaxWords && (
+                <input
+                  type="text"
+                  value={cfg.maxWordsCustom ?? ''}
+                  onChange={(e) => onUpdateSlideConfig('maxWordsCustom', e.target.value)}
+                  placeholder="Ex.: 15, 30, 45 palavras por slide..."
+                  className="ufma-input mt-2 px-3 py-2 text-sm"
+                />
+              )}
             </div>
           </div>
 
@@ -169,12 +420,13 @@ export function TemplateSpecificFields({
               onChange={(e) => onUpdateSlideConfig('alignWithBncc', e.target.checked)}
               className="h-4 w-4 accent-[var(--teal)]"
             />
-            Incluir comando fixo de consulta oficial (BNCC/CNCT/EJA) e documentos adicionais na seção de Conteúdo
+            Incluir comando fixo de consulta oficial (BNCC/CNCT/EJA) e documentos adicionais na
+            seção de Conteúdo
           </label>
         </div>
 
-        {/* Direção de Arte */}
-        <div className="ufma-subbox mb-5 space-y-4 p-4">
+        {/* Bloco 2 — Direção de Arte */}
+        <div className="ufma-subbox space-y-4 p-4">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-[var(--accent)]" />
             <h3 className="text-[11px] font-bold tracking-[0.1em] text-[var(--accent)] uppercase">
@@ -381,27 +633,38 @@ export function TemplateSpecificFields({
             </div>
           </div>
         </div>
-      </section>
+      </div>
     );
-  }
+  };
+
+  const titleText =
+    templates.length === 1
+      ? hasSlides
+        ? 'Direção de Arte e Estrutura dos Slides'
+        : `Detalhes de ${templates[0].shortName}`
+      : `Detalhes dos ${templates.length} Recursos Selecionados`;
 
   return (
-    <section className="ufma-card p-5 sm:p-6">
-      <div className="mb-4 flex items-center gap-3">
+    <section
+      className={`ufma-card p-5 sm:p-6 ${hasSlides ? 'border-[var(--border-strong)]' : ''}`}
+    >
+      <div className="mb-5 flex items-center gap-3">
         <span className="ufma-step-badge flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold">
           3
         </span>
         <div>
           <h2 className="font-display text-base font-bold text-[var(--text)] sm:text-lg">
-            Detalhes de {template.shortName}
+            {titleText}
           </h2>
           <p className="text-xs text-[var(--muted)]">
-            Campos personalizados para que a IA entregue a estrutura exata desse recurso.
+            {templates.length > 1
+              ? 'Configure os campos desejados de cada recurso selecionado; todos serão articulados em um único prompt.'
+              : 'Campos personalizados para que a IA entregue a estrutura exata desse recurso.'}
           </p>
         </div>
       </div>
 
-      {template.isDocumentWithPrivacy && (
+      {hasPrivacyTemplate && (
         <div className="ufma-warnbox mb-4 flex items-start gap-2.5 p-3 text-xs text-[var(--text)]">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warn)]" />
           <p className="leading-relaxed text-[var(--muted)]">
@@ -413,203 +676,48 @@ export function TemplateSpecificFields({
         </div>
       )}
 
-      <div className="space-y-4">
-        {template.specificFields.map((field) => {
-          const val = state.specificValues[field.key] ?? field.defaultValue;
-
-          if (field.type === 'chips') {
-            const baseOptions = field.chipOptions ?? [];
-            const selectedList: string[] = Array.isArray(val)
-              ? val
-              : typeof val === 'string' && val.trim()
-              ? val
-                  .split(/[;,]/)
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-              : [];
-            const customSelected = selectedList.filter((item) => !baseOptions.includes(item));
-            const allOptions = [...baseOptions, ...customSelected];
-            const draft = customChipInputs[field.key] ?? '';
-
-            const toggleChip = (option: string) => {
-              const exists = selectedList.includes(option);
-              const next = exists
-                ? selectedList.filter((item) => item !== option)
-                : [...selectedList, option];
-              onUpdateSpecificValue(field.key, next);
-            };
-
-            const addCustomChip = () => {
-              const cleaned = draft.trim().replace(/\s+/g, ' ');
-              if (!cleaned) return;
-              const existingMatch = allOptions.find(
-                (item) => item.toLowerCase() === cleaned.toLowerCase()
-              );
-              if (existingMatch) {
-                if (!selectedList.includes(existingMatch)) {
-                  onUpdateSpecificValue(field.key, [...selectedList, existingMatch]);
-                }
-              } else {
-                onUpdateSpecificValue(field.key, [...selectedList, cleaned]);
-              }
-              setCustomChipInputs((prev) => ({ ...prev, [field.key]: '' }));
-            };
-
-            return (
-              <div key={field.key}>
-                <span className="mb-2.5 block text-xs font-bold text-[var(--text)]">
-                  {field.label}
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {allOptions.map((option) => {
-                    const isSelected = selectedList.includes(option);
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        aria-pressed={isSelected}
-                        onClick={() => toggleChip(option)}
-                        className="ufma-chip"
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-
-                  <span className="inline-flex flex-wrap items-center gap-2">
-                    <input
-                      type="text"
-                      value={draft}
-                      onChange={(e) =>
-                        setCustomChipInputs((prev) => ({ ...prev, [field.key]: e.target.value }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addCustomChip();
-                        }
-                      }}
-                      placeholder="Adicionar outra opção..."
-                      aria-label={`Adicionar outra opção em ${field.label}`}
-                      className="ufma-chip-input"
-                    />
-                    <button
-                      type="button"
-                      onClick={addCustomChip}
-                      className="ufma-btn inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Adicionar
-                    </button>
-                  </span>
-                </div>
-              </div>
-            );
-          }
-
-          if (field.type === 'checkbox') {
-            return (
-              <label
-                key={field.key}
-                className="ufma-subbox flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-[var(--text)]"
-              >
-                <input
-                  type="checkbox"
-                  checked={Boolean(val)}
-                  onChange={(e) => onUpdateSpecificValue(field.key, e.target.checked)}
-                  className="h-4 w-4 accent-[var(--teal)]"
-                />
-                <span>{field.label}</span>
-              </label>
-            );
-          }
-
-          if (field.type === 'select' && field.options) {
-            return (
-              <div key={field.key}>
-                <label
-                  htmlFor={field.key}
-                  className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
-                >
-                  {field.label}
-                </label>
-                <select
-                  id={field.key}
-                  value={String(val)}
-                  onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
-                  className="ufma-input px-3 py-2.5 text-sm"
-                >
-                  {field.options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            );
-          }
-
-          if (field.type === 'textarea') {
-            return (
-              <div key={field.key}>
-                <label
-                  htmlFor={field.key}
-                  className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
-                >
-                  {field.label}
-                </label>
-                <textarea
-                  id={field.key}
-                  rows={3}
-                  value={String(val)}
-                  onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="ufma-input px-3.5 py-2.5 text-sm"
-                />
-                {field.helperText && (
-                  <p className="mt-1 text-[11px] text-[var(--faint)]">{field.helperText}</p>
-                )}
-              </div>
-            );
-          }
-
-          return (
-            <div key={field.key}>
-              <label
-                htmlFor={field.key}
-                className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
-              >
-                {field.label}
-              </label>
-              <input
-                id={field.key}
-                type={field.type === 'number' ? 'number' : 'text'}
-                min={field.type === 'number' ? 0 : undefined}
-                value={String(val)}
-                onChange={(e) => onUpdateSpecificValue(field.key, e.target.value)}
-                placeholder={field.placeholder}
-                className="ufma-input px-3.5 py-2.5 text-sm"
-              />
-            </div>
-          );
-        })}
-
-        <div>
-          <label
-            htmlFor="classContext"
-            className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
+      <div className="space-y-5">
+        {nonSlideTemplates.map((tpl) => (
+          <div
+            key={tpl.id}
+            className={
+              templates.length > 1
+                ? 'ufma-subbox space-y-4 p-4'
+                : 'space-y-4'
+            }
           >
-            Contexto real da turma ou escola (opcional, mas aumenta muito a precisão)
-          </label>
-          <textarea
-            id="classContext"
-            rows={2}
-            value={state.classContext}
-            onChange={(e) => onUpdateClassContext(e.target.value)}
-            placeholder="Ex.: Turma de 30 estudantes em escola pública, poucos computadores disponíveis, alunos muito engajados com atividades em grupo..."
-            className="ufma-input px-3.5 py-2 text-sm"
-          />
-        </div>
+            {templates.length > 1 && (
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                <h3 className="text-xs font-bold tracking-[0.06em] text-[var(--accent)] uppercase">
+                  {tpl.shortName}
+                </h3>
+                <span className="text-[11px] text-[var(--faint)]">{tpl.name}</span>
+              </div>
+            )}
+            {tpl.specificFields.map((field) => renderField(field, tpl.id))}
+          </div>
+        ))}
+
+        {hasSlides && renderSlidesConfigBlock()}
+
+        {nonSlideTemplates.length > 0 && (
+          <div>
+            <label
+              htmlFor="classContext"
+              className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
+            >
+              Contexto real da turma ou escola (opcional, mas aumenta muito a precisão)
+            </label>
+            <textarea
+              id="classContext"
+              rows={2}
+              value={state.classContext}
+              onChange={(e) => onUpdateClassContext(e.target.value)}
+              placeholder="Ex.: Turma de 30 estudantes em escola pública, poucos computadores disponíveis, alunos muito engajados com atividades em grupo..."
+              className="ufma-input px-3.5 py-2 text-sm"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

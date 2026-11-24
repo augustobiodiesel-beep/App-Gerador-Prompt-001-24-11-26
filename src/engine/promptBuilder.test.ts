@@ -1,20 +1,37 @@
 import { describe, expect, it } from 'vitest';
+import { getStageById } from '../data/education';
 import {
   createDefaultSlideConfig,
   createInitialPromptState,
   DEMO_PRESETS,
-  getDefaultSpecificValues,
-  getTemplateById,
 } from '../data/templates';
 import { analyzePromptQuality, buildPrompt, estimatePromptStats } from './promptBuilder';
 
 describe('promptBuilder engine', () => {
-  it('gera o prompt de Slides Editoriais seguindo fielmente o modelo de Direção de Arte e o comando fixo da BNCC', () => {
+  it('inicia com estado completamente vazio quando não usa exemplo pronto', () => {
+    const emptyState = createInitialPromptState();
+    expect(emptyState.selectedTemplateIds).toEqual([]);
+    expect(emptyState.stage).toBe('');
+    expect(emptyState.yearOrTrack).toBe('');
+    expect(emptyState.component).toBe('');
+    expect(emptyState.topic).toBe('');
+    expect(emptyState.methodology).toBe('');
+    expect(emptyState.tone).toBe('');
+    expect(emptyState.outputFormat).toBe('');
+    expect(emptyState.inclusionEnabled).toBe(false);
+
+    const quality = analyzePromptQuality(emptyState);
+    expect(quality.score).toBe(0);
+    expect(quality.level).toBe('Inicial');
+  });
+
+  it('gera o prompt de Slides Editoriais seguindo fielmente o modelo de Direção de Arte, opções personalizadas e comando fixo da BNCC', () => {
     const base = createInitialPromptState();
     const state = {
       ...base,
       category: 'complementares' as const,
       templateId: 'slides_editorial',
+      selectedTemplateIds: ['slides_editorial'],
       stage: 'ensino_medio' as const,
       yearOrTrack: '2ª série do Ensino Médio',
       component: 'Biologia (Ciências da Natureza)',
@@ -23,7 +40,10 @@ describe('promptBuilder engine', () => {
       additionalDocuments: 'Relatório do IPCC (resumo didático)',
       slideConfig: {
         ...createDefaultSlideConfig(),
-        slideCount: '10–15',
+        slideCount: '__outro__',
+        slideCountCustom: '18',
+        maxWordsPerSlide: '__outro__',
+        maxWordsCustom: '30',
         audienceCustom: 'Estudantes do 2º ano do Ensino Médio',
         impactObjective: 'Entender a transição energética e propor soluções na escola',
         baseMaterial: 'Dados da matriz elétrica brasileira',
@@ -38,8 +58,9 @@ describe('promptBuilder engine', () => {
     expect(prompt).toContain('Selecione automaticamente as Competências Gerais');
     expect(prompt).toContain('Matriz de Referência do ENEM');
     expect(prompt).toContain('Relatório do IPCC (resumo didático)');
-    expect(prompt).toContain('## Direção de arte');
-    expect(prompt).toContain('Máx. 25 palavras de texto corrido por slide');
+    expect(prompt).toContain('18 slides');
+    expect(prompt).toContain('Máx. 30 palavras de texto corrido por slide');
+    expect(prompt).toContain('Taxonomia de Bloom Revisada');
     expect(prompt).toContain('## Fotografia (prioridade máxima)');
     expect(prompt).toContain('## Estrutura narrativa');
     expect(prompt).toContain('## Entrega');
@@ -47,35 +68,91 @@ describe('promptBuilder engine', () => {
     expect(prompt).toContain('revise cada slide contra este checklist');
   });
 
-  it('insere comando fixo para a IA ler o documento oficial e gerar objetivos com intencionalidade pedagógica', () => {
-    const state = createInitialPromptState();
-    state.topic = 'Equilíbrio Termodinâmico e Máquinas Térmicas';
-    state.selectedExtraDocs = ['dctma'];
-    state.additionalDocuments = 'PPP da Escola Estadual Modelo';
-    state.inclusionEnabled = true;
+  it('permite multisseleção de recursos entre categorias e articula todos em um único prompt estruturado', () => {
+    const state = {
+      ...createInitialPromptState(),
+      selectedTemplateIds: ['plano_aula', 'slides_editorial', 'banco_questoes'],
+      templateId: 'plano_aula',
+      stage: 'ef_anos_finais' as const,
+      yearOrTrack: '8º ano',
+      component: 'Computação / Pensamento Computacional (BNCC)',
+      topic: 'Algoritmos e Decomposição no Cotidiano',
+      specificValues: {
+        quantidadeItens: '__outro__',
+        quantidadeItens__other: '12 questões progressivas',
+        tipoQuestoes: 'Subjetivas / Discursivas (abertas)',
+      },
+      slideConfig: {
+        ...createDefaultSlideConfig(),
+        slideCount: '8–10',
+        maxWordsPerSlide: '20',
+      },
+    };
 
     const prompt = buildPrompt(state);
 
-    expect(prompt).toContain('# 1. Papel e Especialidade (Persona)');
-    expect(prompt).toContain('COMANDO FIXO — Consulta Obrigatória ao Documento Oficial');
-    expect(prompt).toContain('selecione automaticamente');
-    expect(prompt).toContain('intencionalidade pedagógica');
-    expect(prompt).toContain('Sempre que cabível ao recurso solicitado');
-    expect(prompt).toContain('Base Nacional Comum Curricular — BNCC');
-    expect(prompt).toContain('Documento Curricular do Território Maranhense');
-    expect(prompt).toContain('PPP da Escola Estadual Modelo');
-    expect(prompt).toContain('Taxonomia de Bloom');
-    expect(prompt).toContain('Educação Inclusiva, Acessibilidade e DUA');
+    expect(prompt).toContain('Conjunto articulado com 3 recursos');
+    expect(prompt).toContain('Parte 1 — Plano de Aula Completo');
+    expect(prompt).toContain('Parte 2 — Slides Editoriais Premium');
+    expect(prompt).toContain('Parte 3 — Banco de Questões');
+    expect(prompt).toContain('Diretrizes Obrigatórias de Direção de Arte para os Slides Editoriais');
+    expect(prompt).toContain('12 questões progressivas');
+    expect(prompt).toContain('Subjetivas / Discursivas (abertas)');
+    expect(prompt).toContain('Complemento da BNCC de Computação (Resolução CNE/CEB nº 1/2022)');
+    expect(prompt).toContain('Taxonomia de Bloom Revisada');
+  });
+
+  it('exclui referências ao ENEM para etapas fora do Ensino Médio Regular e Médio Técnico', () => {
+    const fundamentalState = {
+      ...createInitialPromptState(),
+      selectedTemplateIds: ['prova_avaliacao'],
+      templateId: 'prova_avaliacao',
+      stage: 'ef_anos_finais' as const,
+      yearOrTrack: '7º ano',
+      component: 'Ciências',
+      topic: 'Ecossistemas Brasileiros',
+      selectedExtraDocs: ['enem', 'dctma'],
+      specificValues: {
+        estiloItens: 'Contextualizado (padrão BNCC / ENEM)',
+      },
+    };
+
+    const promptFund = buildPrompt(fundamentalState);
+    expect(promptFund).not.toContain('Matriz de Referência do ENEM');
+    expect(promptFund).not.toContain('padrão BNCC / ENEM');
+    expect(promptFund).toContain('Documento Curricular do Território Maranhense');
+
+    const medioState = {
+      ...fundamentalState,
+      stage: 'ensino_medio' as const,
+      yearOrTrack: '2ª série do Ensino Médio',
+    };
+    const promptMedio = buildPrompt(medioState);
+    expect(promptMedio).toContain('Matriz de Referência do ENEM');
+    expect(promptMedio).toContain('padrão BNCC / ENEM');
+  });
+
+  it('lista os 3 eixos da BNCC Computação até o 9º ano e as 7 competências do EM acima do 9º ano', () => {
+    const efFinal = getStageById('ef_anos_finais');
+    expect(efFinal.components).toContain('Computação / Pensamento Computacional (BNCC)');
+    expect(efFinal.components).toContain('Computação / Mundo Digital (BNCC)');
+    expect(efFinal.components).toContain('Computação / Cultura Digital (BNCC)');
+
+    const em = getStageById('ensino_medio');
+    const emCompCompetencies = em.components.filter((c) => c.startsWith('Computação (BNCC EM'));
+    expect(emCompCompetencies).toHaveLength(7);
   });
 
   it('inclui cláusula de proteção LGPD em documentos pedagógicos como PEI e Relatórios', () => {
-    const template = getTemplateById('pei_adaptacao');
     const state = {
       ...createInitialPromptState(),
       category: 'documentais' as const,
+      selectedTemplateIds: ['pei_adaptacao'],
       templateId: 'pei_adaptacao',
+      stage: 'ef_anos_iniciais' as const,
+      yearOrTrack: '4º ano',
+      component: 'Matemática',
       topic: 'Adaptação em Matemática — Multiplicação',
-      specificValues: getDefaultSpecificValues(template),
     };
 
     const prompt = buildPrompt(state);
@@ -87,6 +164,8 @@ describe('promptBuilder engine', () => {
 
   it('suporta o Ensino Médio Técnico (BNCC + CNCT) e EJA com seus documentos oficiais específicos', () => {
     const presetTec = DEMO_PRESETS.find((p) => p.id === 'demo_prova_tecnico')!;
+    expect(presetTec.label).toBe('Avaliação');
+
     const stateTec = {
       ...createInitialPromptState(),
       ...presetTec.state,
@@ -116,8 +195,14 @@ describe('promptBuilder engine', () => {
 
     const richState = {
       ...emptyState,
+      selectedTemplateIds: ['plano_aula'],
+      templateId: 'plano_aula',
+      stage: 'ef_anos_iniciais' as const,
+      yearOrTrack: '5º ano',
+      component: 'Ciências',
       topic: 'Ciclo Hidrológico na Comunidade Local',
       classContext: 'Turma de 25 alunos do 5º ano com perfil participativo',
+      inclusionEnabled: true,
     };
     const richQuality = analyzePromptQuality(richState);
 
@@ -128,5 +213,36 @@ describe('promptBuilder engine', () => {
     const stats = estimatePromptStats(buildPrompt(richState));
     expect(stats.words).toBeGreaterThan(100);
     expect(stats.estimatedTokens).toBeGreaterThan(stats.words);
+  });
+
+  it('injeta referências importadas do Zotero com fundamentação obrigatória no prompt', () => {
+    const state = {
+      ...createInitialPromptState(),
+      selectedTemplateIds: ['plano_aula'],
+      templateId: 'plano_aula',
+      stage: 'ef_anos_finais' as const,
+      yearOrTrack: '8º ano',
+      component: 'Computação / Pensamento Computacional (BNCC)',
+      topic: 'Pensamento Computacional Desplugado',
+      selectedZoteroRefs: [
+        {
+          id: 'zot-1',
+          title: 'Computação na Educação Básica: Fundamentos e Práticas',
+          authors: ['Brackmann, Christian'],
+          year: '2024',
+          source: 'Editora UFMA',
+          abstractNote: 'Abordagem prática dos pilares do Pensamento Computacional.',
+        },
+      ],
+      includeZoteroAbstracts: true,
+    };
+
+    const prompt = buildPrompt(state);
+
+    expect(prompt).toContain('Referências Bibliográficas do Zotero do(a) Docente');
+    expect(prompt).toContain('Brackmann, Christian (2024)');
+    expect(prompt).toContain('Computação na Educação Básica: Fundamentos e Práticas');
+    expect(prompt).toContain('Resumo/Síntese: Abordagem prática dos pilares');
+    expect(prompt).toContain('padrão ABNT');
   });
 });

@@ -10,7 +10,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import { getStageById } from '../data/education';
+import { findStageById } from '../data/education';
 import { getTemplateById, RESOURCE_CATEGORIES } from '../data/templates';
 import { exportLibraryToJson, parseImportedLibraryJson } from '../services/storage';
 import type { ResourceCategoryId, SavedPrompt } from '../types/prompt';
@@ -213,8 +213,14 @@ export function LibraryView({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filtered.map((item) => {
-            const tpl = getTemplateById(item.state.templateId);
-            const stage = getStageById(item.state.stage);
+            const selectedIds =
+              item.state.selectedTemplateIds?.length
+                ? item.state.selectedTemplateIds
+                : item.state.templateId
+                  ? [item.state.templateId]
+                  : [];
+            const selectedTemplates = selectedIds.map((id) => getTemplateById(id));
+            const stage = findStageById(item.state.stage);
             return (
               <article
                 key={item.id}
@@ -224,11 +230,22 @@ export function LibraryView({
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <div>
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
-                          {tpl.shortName}
-                        </span>
+                        {selectedTemplates.length > 0 ? (
+                          selectedTemplates.map((tpl) => (
+                            <span
+                              key={tpl.id}
+                              className="rounded-full border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]"
+                            >
+                              {tpl.shortName}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="rounded-full border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                            Prompt Pedagógico
+                          </span>
+                        )}
                         <span className="rounded-full border border-[var(--border)] bg-[var(--surface-solid)] px-2 py-0.5 text-[10px] font-semibold text-[var(--muted)]">
-                          {stage.shortLabel}
+                          {stage?.shortLabel ?? 'Educação Básica'}
                         </span>
                       </div>
                       <h3 className="font-display text-sm font-bold text-[var(--text)]">
