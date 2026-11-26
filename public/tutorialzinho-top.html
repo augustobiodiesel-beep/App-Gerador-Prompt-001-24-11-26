@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="claro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#8D0333" />
+    <title>Tutorialzinho Top — Guia Ilustrado do PromptDocente (UFMA / PROFCOMP-MA)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --vinho: #8d0333;
+        --vinho-escuro: #5c0222;
+        --dourado: #d4b277;
+        --amarelo: #fec84d;
+        --teal: #0a8f8b;
+        --bg: #faf7f2;
+        --surface: #ffffff;
+        --surface-2: #f4eee6;
+        --text: #221319;
+        --muted: #5a464e;
+        --faint: #7c6770;
+        --border: #e6dacb;
+        --shadow: 0 12px 32px -14px rgba(74, 6, 32, 0.16);
+      }
+
+      html[data-theme='escuro'] {
+        --bg: #150b10;
+        --surface: #1f1118;
+        --surface-2: #2a1720;
+        --text: #faf5f0;
+        --muted: #d2c1c8;
+        --faint: #a7929b;
+        --border: #3d2330;
+        --shadow: 0 14px 36px -12px rgba(0, 0, 0, 0.55);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+      }
+
+      h1,
+      h2,
+      h3,
+      .font-display {
+        font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+      }
+
+      /* Top institutional bar */
+      .topbar {
+        background: linear-gradient(90deg, #6e0228, #8d0333 55%, #5c0222);
+        color: #faf5f0;
+        font-size: 12px;
+        padding: 8px 16px;
+        border-bottom: 2px solid var(--dourado);
+      }
+
+      .topbar-inner {
+        max-width: 1080px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      /* Sticky Header */
+      .sticky-nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+      }
+
+      .nav-inner {
+        max-width: 1080px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: var(--text);
+      }
+
+      .logo-frame {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1.5px solid var(--dourado);
+        border-radius: 12px;
+        padding: 4px 7px;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .logo-frame img {
+        height: 36px;
+        width: auto;
+        display: block;
+      }
+
+      .brand-title {
+        font-weight: 800;
+        font-size: 16px;
+        line-height: 1.15;
+      }
+
+      .brand-sub {
+        font-size: 11px;
+        color: var(--faint);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .nav-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 15px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        border-color: var(--dourado);
+        box-shadow: 0 8px 18px -10px rgba(141, 3, 51, 0.35);
+      }
+
+      .btn-pri {
+        background: linear-gradient(135deg, #8d0333, #660225);
+        color: #faf5f0;
+        border-color: var(--dourado);
+      }
+
+      /* Container */
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 28px 16px 64px;
+      }
+
+      /* Hero */
+      .hero {
+        background: linear-gradient(135deg, #8d0333 0%, #610224 62%, #3d051a 100%);
+        color: #faf5f0;
+        border: 2px solid var(--dourado);
+        border-radius: 26px;
+        padding: 32px 28px;
+        box-shadow: 0 20px 44px -18px rgba(141, 3, 51, 0.55);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(254, 200, 77, 0.16);
+        border: 1px solid rgba(254, 200, 77, 0.55);
+        color: var(--amarelo);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 5px 13px;
+        border-radius: 999px;
+      }
+
+      .hero h1 {
+        margin: 14px 0 10px;
+        font-size: clamp(28px, 4.4vw, 44px);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .hero h1 span {
+        color: var(--amarelo);
+      }
+
+      .hero p {
+        margin: 0 0 20px;
+        max-width: 720px;
+        font-size: 15.5px;
+        color: rgba(250, 245, 240, 0.92);
+      }
+
+      .hero-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .hero-pill {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(212, 178, 119, 0.45);
+        border-radius: 12px;
+        padding: 8px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+
+      .hero-pill strong {
+        color: var(--amarelo);
+      }
+
+      /* Table of Contents */
+      .toc {
+        margin-top: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 22px 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .toc h2 {
+        margin: 0 0 4px;
+        font-size: 18px;
+      }
+
+      .toc-sub {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .toc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 10px;
+      }
+
+      .toc-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 10px 13px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+
+      .toc-link:hover {
+        transform: translateY(-2px);
+        border-color: var(--vinho);
+      }
+
+      .toc-num {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: var(--vinho);
+        color: var(--amarelo);
+        font-weight: 800;
+        font-size: 12px;
+        display: inline-grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+
+      /* Tutorial Step Card */
+      .step-card {
+        margin-top: 28px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        scroll-margin-top: 84px;
+      }
+
+      .step-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .step-badge {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #8d0333, #660225);
+        color: var(--amarelo);
+        border: 1.5px solid var(--dourado);
+        font-weight: 800;
+        font-size: 16px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+
+      .step-kicker {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--vinho);
+      }
+
+      html[data-theme='escuro'] .step-kicker {
+        color: var(--amarelo);
+      }
+
+      .step-head h2 {
+        margin: 2px 0 4px;
+        font-size: clamp(19px, 2.5vw, 24px);
+        line-height: 1.2;
+      }
+
+      .step-head p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      /* Screenshot frame */
+      .shot-wrap {
+        position: relative;
+        margin: 16px 0 18px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 2px solid var(--border);
+        background: var(--surface-2);
+        cursor: zoom-in;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .shot-wrap:hover {
+        border-color: var(--dourado);
+        box-shadow: 0 16px 32px -14px rgba(141, 3, 51, 0.3);
+      }
+
+      .shot-wrap img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .shot-wrap.mobile-shot {
+        max-width: 390px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .zoom-hint {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        background: rgba(34, 19, 25, 0.85);
+        color: #fec84d;
+        border: 1px solid rgba(254, 200, 77, 0.55);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+
+      /* Callout legend list */
+      .legend-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13.5px;
+      }
+
+      .legend-num {
+        width: 25px;
+        height: 25px;
+        border-radius: 999px;
+        background: var(--amarelo);
+        color: #3b0419;
+        border: 2px solid #6e0228;
+        font-weight: 900;
+        font-size: 12.5px;
+        display: inline-grid;
+        place-items: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .legend-item strong {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--text);
+      }
+
+      .legend-item span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* Gold tip box */
+      .tip-box {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border-left: 4px solid var(--teal);
+        background: color-mix(in srgb, var(--teal) 10%, var(--surface-2));
+        font-size: 13.5px;
+        color: var(--text);
+      }
+
+      .tip-box strong {
+        color: var(--teal);
+      }
+
+      /* Lightbox modal */
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(15, 6, 10, 0.9);
+        backdrop-filter: blur(6px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .lightbox.open {
+        display: flex;
+      }
+
+      .lightbox img {
+        max-width: 96vw;
+        max-height: 90vh;
+        border-radius: 14px;
+        border: 2px solid var(--dourado);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      }
+
+      .lightbox-close {
+        position: fixed;
+        top: 18px;
+        right: 22px;
+        background: #8d0333;
+        color: #fec84d;
+        border: 2px solid #fec84d;
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-weight: 800;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      /* Footer */
+      footer {
+        margin-top: 40px;
+        padding: 24px;
+        border-radius: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        font-size: 12.5px;
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      @media print {
+        .sticky-nav,
+        .zoom-hint,
+        .lightbox {
+          display: none !important;
+        }
+        .step-card {
+          break-inside: avoid;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="topbar-inner">
+        <span>Universidade Federal do Maranhão · <strong>PROFCOMP-MA</strong> — Guia Oficial de Uso</span>
+        <span>Educação Básica · BNCC · BNCC Computação · CNCT · EJA</span>
+      </div>
+    </div>
+
+    <header class="sticky-nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <span class="logo-frame">
+            <img src="./ufma-logo.png" alt="Logomarca oficial UFMA" />
+          </span>
+          <div>
+            <div class="brand-title">Tutorialzinho Top</div>
+            <div class="brand-sub">PromptDocente · Caderno de Contexto</div>
+          </div>
+        </a>
+
+        <div class="nav-actions">
+          <button type="button" class="btn" id="themeToggle">🌗 Alternar tema</button>
+          <button type="button" class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
+          <a class="btn btn-pri" href="/">← Voltar para o App</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <!-- HERO -->
+      <section class="hero">
+        <span class="hero-badge">★ Guia Visual Completo · Passo a Passo</span>
+        <h1>
+          <span>Tutorialzinho Top</span>: domine cada botão do PromptDocente em poucos minutos!
+        </h1>
+        <p>
+          Preparamos este guia ilustrado com <strong>prints reais de cada tela</strong> e
+          <strong>setas apontando para os botões</strong> para que qualquer professor da Educação
+          Básica consiga montar prompts profissionais alinhados à BNCC — no computador ou no
+          celular.
+        </p>
+        <div class="hero-stats">
+          <div class="hero-pill"><strong>11 telas</strong> com setas explicativas</div>
+          <div class="hero-pill"><strong>Multisseleção</strong> de recursos</div>
+          <div class="hero-pill"><strong>Fontes</strong> (arquivos, links e textos)</div>
+          <div class="hero-pill"><strong>32 IAs gratuitas</strong> com 1 clique</div>
+        </div>
+      </section>
+
+      <!-- SUMÁRIO -->
+      <nav class="toc" aria-label="Sumário do tutorial">
+        <h2>Índice Rápido — clique para ir direto ao passo desejado</h2>
+        <p class="toc-sub">
+          Dica: clique em qualquer imagem deste tutorial para ampliar em tela cheia.
+        </p>
+        <div class="toc-grid">
+          <a class="toc-link" href="#tela-inicial"><span class="toc-num">1</span> Tela Inicial e Menu</a>
+          <a class="toc-link" href="#passo-1"><span class="toc-num">2</span> Passo 1: Escolher Recursos (Multisseleção)</a>
+          <a class="toc-link" href="#passo-2-bncc"><span class="toc-num">3</span> Passo 2: Etapa, BNCC e Regra ENEM</a>
+          <a class="toc-link" href="#passo-2-fontes"><span class="toc-num">4</span> Passo 2: Fontes (Arquivo, Link e Texto)</a>
+          <a class="toc-link" href="#passo-3-detalhes"><span class="toc-num">5</span> Passo 3: Detalhes, Chips e "Outro"</a>
+          <a class="toc-link" href="#passo-3-slides"><span class="toc-num">6</span> Slides Editoriais Premium</a>
+          <a class="toc-link" href="#passo-4"><span class="toc-num">7</span> Passo 4: Refinamento e Inclusão (DUA)</a>
+          <a class="toc-link" href="#painel-prompt"><span class="toc-num">8</span> Prompt em Camadas, Cópia e 32 IAs</a>
+          <a class="toc-link" href="#diretorio-ias"><span class="toc-num">9</span> Diretório das 32 IAs Gratuitas</a>
+          <a class="toc-link" href="#biblioteca"><span class="toc-num">10</span> Biblioteca Local e Backup (.json)</a>
+          <a class="toc-link" href="#celular"><span class="toc-num">11</span> Usando no Celular (Smartphone)</a>
+        </div>
+      </nav>
+
+      <!-- 1. TELA INICIAL -->
+      <article class="step-card" id="tela-inicial">
+        <div class="step-head">
+          <div class="step-badge">1</div>
+          <div>
+            <div class="step-kicker">Começando pelo início</div>
+            <h2>Conhecendo a Tela Inicial e o Menu Principal</h2>
+            <p>
+              Ao abrir o aplicativo, você encontra o menu no topo, os atalhos principais e exemplos
+              prontos para testar sem precisar digitar nada.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/01-tela-inicial.png">
+          <img src="./tutorial/01-tela-inicial.png" alt="Print anotado da Tela Inicial do PromptDocente" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Navegação e abas do App</strong>
+              <span>Alterne a qualquer momento entre <em>Início</em>, <em>Gerar Prompt</em>, <em>IAs &amp; Links (32)</em>, <em>Biblioteca</em>, <em>Guia</em>, atalho de <em>Slides</em> e o botão de tema <strong>Claro/Escuro</strong> (ícone de lua/sol).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Montar prompt agora</strong>
+              <span>Abre o construtor limpo para você montar seu prompt do zero em 4 passos simples.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Tutorialzinho Top</strong>
+              <span>Este guia visual completo fica sempre destacado aqui na primeira página para consulta rápida.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">4</span>
+            <div>
+              <strong>Exemplos prontos (1 clique)</strong>
+              <span>Preenche automaticamente um exemplo completo (Slides, Plano de Aula ou Avaliação) para você ver como funciona na prática.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. PASSO 1 MULTISSELEÇÃO -->
+      <article class="step-card" id="passo-1">
+        <div class="step-head">
+          <div class="step-badge">2</div>
+          <div>
+            <div class="step-kicker">Construtor · Passo 1</div>
+            <h2>Escolher 1 ou vários recursos ao mesmo tempo (Multisseleção)</h2>
+            <p>
+              Ao abrir o construtor sem exemplo pronto, todos os campos começam vazios. Você pode
+              marcar um único recurso ou combinar vários — até de categorias diferentes!
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/02-passo1-multiselecao.png">
+          <img src="./tutorial/02-passo1-multiselecao.png" alt="Print anotado do Passo 1 com multisseleção de recursos" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Limpar / Novo prompt</strong>
+              <span>Zera todos os campos instantaneamente para começar um novo planejamento do zero.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Abas das 4 categorias</strong>
+              <span>Navegue entre <em>Didáticos</em>, <em>Avaliações</em>, <em>Documentais (com LGPD)</em> e <em>Complementares</em>. O número colorido mostra quantos recursos já estão marcados em cada aba.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Marque 1 ou vários recursos</strong>
+              <span>Clique nos cartões para marcar ou desmarcar. No exemplo acima, combinamos <strong>Plano de Aula</strong> + <strong>Banco de Questões</strong> no mesmo prompt!</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">4</span>
+            <div>
+              <strong>Resumo dos selecionados</strong>
+              <span>Mostra todos os recursos escolhidos em uma faixa única. Clique no <strong>×</strong> para remover qualquer um rapidamente.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. PASSO 2 ETAPA E BNCC -->
+      <article class="step-card" id="passo-2-bncc">
+        <div class="step-head">
+          <div class="step-badge">3</div>
+          <div>
+            <div class="step-kicker">Construtor · Passo 2 (Parte A)</div>
+            <h2>Etapa da Educação Básica, BNCC Computação e Regra do ENEM</h2>
+            <p>
+              Você não precisa decorar códigos da BNCC! Ao escolher a etapa escolar, o aplicativo
+              ajusta automaticamente os componentes curriculares e o documento oficial que a IA
+              deverá consultar.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/03-passo2-etapa-bncc.png">
+          <img src="./tutorial/03-passo2-etapa-bncc.png" alt="Print anotado do Passo 2 com etapa escolar, BNCC Computação e tema" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Escolha a etapa escolar</strong>
+              <span>Selecione <em>Ed. Infantil</em>, <em>EF Anos Iniciais</em>, <em>EF Anos Finais</em>, <em>Médio Regular</em>, <em>Médio Técnico</em> ou <em>EJA</em>.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>BNCC Computação inteligente por etapa</strong>
+              <span>Até o 9º ano aparecem os <strong>3 eixos</strong> (Pensamento Computacional, Mundo Digital e Cultura Digital). No Ensino Médio, Técnico e EJA aparecem as <strong>7 competências da BNCC Computação EM</strong>.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Digite o Tema Central</strong>
+              <span>Escreva o assunto da aula com clareza (ex.: <em>Energia Solar e Pensamento Computacional na Escola</em>).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">4</span>
+            <div>
+              <strong>BNCC automática (Comando Fixo)</strong>
+              <span>O prompt manda a IA consultar o documento oficial da etapa (BNCC, CNCT ou DCNs da EJA), escolher as habilidades adequadas e criar os Objetivos de Aprendizagem com intencionalidade pedagógica.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <strong>💡 Regra do ENEM automática:</strong> referências e opções da
+          <em>Matriz de Referência ENEM</em> só aparecem quando você escolhe
+          <strong>Médio Regular</strong> ou <strong>Médio Técnico</strong>. Em Infantil,
+          Fundamental e EJA, o ENEM fica automaticamente bloqueado para não distorcer a faixa etária.
+        </div>
+      </article>
+
+      <!-- 4. PASSO 2 FONTES -->
+      <article class="step-card" id="passo-2-fontes">
+        <div class="step-head">
+          <div class="step-badge">4</div>
+          <div>
+            <div class="step-kicker">Construtor · Passo 2 (Parte B)</div>
+            <h2>Inserir Fontes: Arquivos do Dispositivo, Links de Sites e Textos Copiados</h2>
+            <p>
+              Quer que a IA baseie a aula na sua apostila, em um site oficial ou em um texto que
+              você copiou? Adicione suas fontes aqui e o prompt exigirá que a IA as utilize!
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/04-passo2-fontes.png">
+          <img src="./tutorial/04-passo2-fontes.png" alt="Print anotado do campo de inserção de fontes do dispositivo, links e textos" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Selecionar do dispositivo</strong>
+              <span>Suba um ou vários arquivos do computador ou celular (<strong>PDF, Word .docx, TXT, Markdown, CSV, slides ou imagens</strong>). Arquivos de texto e Word têm o conteúdo lido automaticamente!</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Adicionar link / site</strong>
+              <span>Abre um campo para colar um ou vários endereços de sites (ex.: portal do MEC, artigo ou reportagem).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Colar texto como fonte</strong>
+              <span>Permite colar diretamente um trecho de livro didático, artigo ou resumo que você copiou.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">4</span>
+            <div>
+              <strong>Uso obrigatório garantido</strong>
+              <span>Cada fonte ativa entra automaticamente no prompt com instrução explícita para a IA utilizá-la como uma das fontes centrais do material.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <strong>💡 Dica para PDFs e imagens:</strong> ao enviar um PDF ou imagem pelo botão
+          <em>Selecionar do dispositivo</em>, o nome do arquivo já entra como fonte obrigatória no
+          prompt. Na hora de colar o prompt no ChatGPT, Gemini ou DeepSeek, basta anexar esse mesmo
+          PDF/imagem no chat da IA.
+        </div>
+      </article>
+
+      <!-- 5. PASSO 3 DETALHES E OUTRO -->
+      <article class="step-card" id="passo-3-detalhes">
+        <div class="step-head">
+          <div class="step-badge">5</div>
+          <div>
+            <div class="step-kicker">Construtor · Passo 3</div>
+            <h2>Detalhes Específicos dos Recursos, Chips e Opção "Outro"</h2>
+            <p>
+              Os campos deste passo mudam automaticamente de acordo com o(s) recurso(s) escolhido(s)
+              no Passo 1. Se você marcou mais de um recurso, todos aparecem organizados aqui.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/05-passo3-detalhes-outro.png">
+          <img src="./tutorial/05-passo3-detalhes-outro.png" alt="Print anotado do Passo 3 com chips clicáveis e opção Outro personalizada" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Chips clicáveis de infraestrutura</strong>
+              <span>Clique nos recursos que existem na sua escola (ex.: <em>Projetor / TV</em>, <em>Sem internet em sala</em>, <em>Quadro e papel</em>) ou digite uma opção própria e clique em <strong>+ Adicionar</strong>.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Opção "Outro (personalizar)..."</strong>
+              <span>Presente em <em>Produto Final</em> (Sequência Didática), <em>Quantidade de questões</em>, <em>Tipos de questões</em> e <em>Formato do jogo</em>. Ao selecionar, abre um campo livre para você digitar exatamente o que precisa.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Questões Subjetivas e demais formatos</strong>
+              <span>No Banco de Questões, você escolhe entre <em>Subjetivas / Discursivas</em>, <em>Múltipla escolha</em>, <em>Verdadeiro ou Falso</em>, <em>Associação</em>, <em>Misto</em> ou <em>Outro</em>.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6. SLIDES EDITORIAIS PREMIUM -->
+      <article class="step-card" id="passo-3-slides">
+        <div class="step-head">
+          <div class="step-badge">6</div>
+          <div>
+            <div class="step-kicker">Recurso Especial · Direção de Arte</div>
+            <h2>Slides Editoriais Premium (Padrão Apple / Kinfolk / Monocle)</h2>
+            <p>
+              Ao marcar <strong>Slides Editoriais Premium</strong> (na aba Complementares ou pelo
+              atalho <em>Slides</em> no topo), o Passo 3 exibe um estúdio completo de direção de
+              arte para evitar slides cheios de texto.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/08-slides-editoriais.png">
+          <img src="./tutorial/08-slides-editoriais.png" alt="Print anotado das opções personalizadas de Slides Editoriais Premium" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Quantidade de slides personalizável</strong>
+              <span>Escolha entre as faixas prontas ou marque <strong>Outra quantidade (personalizar)...</strong> para informar qualquer número exato (ex.: <em>16 slides</em>).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Limite de palavras por slide livre</strong>
+              <span>Defina 20, 25, 35 palavras ou escolha <strong>Outra quantidade</strong> para personalizar o limite de texto em cada slide.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Estética, paleta, fotografia e arco narrativo</strong>
+              <span>Configure a estética visual, paleta de cores (máx. 3 cores + neutros), tipografia, fotografia real verificada, arco em 5 atos e notas do apresentador.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7. PASSO 4 REFINAMENTO E DUA -->
+      <article class="step-card" id="passo-4">
+        <div class="step-head">
+          <div class="step-badge">7</div>
+          <div>
+            <div class="step-kicker">Construtor · Passo 4</div>
+            <h2>Refinamento Pedagógico, Inclusão (DUA / LBI) e Restrições</h2>
+            <p>
+              O Passo 4 ficou mais limpo e direto: a progressão cognitiva da
+              <strong>Taxonomia de Bloom Revisada</strong> e o padrão
+              <strong>Estruturado completo</strong> já funcionam automaticamente nos bastidores do
+              motor do prompt!
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/06-passo4-refinamento-dua.png">
+          <img src="./tutorial/06-passo4-refinamento-dua.png" alt="Print anotado do Passo 4 com Refinamento Pedagógico e Inclusão DUA" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Metodologia, Tom e Formato (opcionais)</strong>
+              <span>Se desejar, escolha a metodologia ativa (ABP, Sala Invertida, Gamificação...), o tom linguístico e o formato de entrega. Se deixar em branco, o prompt já aplica boas práticas didáticas.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Ativar Inclusão / LBI / DUA</strong>
+              <span>Marque <strong>Ativar</strong> para selecionar perfis de acessibilidade (DUA, TEA, TDAH, Dislexia, Baixa Visão, Altas Habilidades...) e adicionar orientações sem citar nomes reais de estudantes.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Pedidos ou restrições extras</strong>
+              <span>Use este espaço livre para dar um toque regional ou prático (ex.: <em>"Usar exemplos do Maranhão"</em> ou <em>"Caber em 2 páginas"</em>).</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 8. PAINEL DIREITO PROMPT E 32 IAS -->
+      <article class="step-card" id="painel-prompt">
+        <div class="step-head">
+          <div class="step-badge">8</div>
+          <div>
+            <div class="step-kicker">Resultado em Tempo Real</div>
+            <h2>Painel do Prompt: Qualidade, Camadas, Cópia e Envio para 32 IAs</h2>
+            <p>
+              À medida que você preenche os 4 passos, o prompt vai sendo construído automaticamente à
+              direita (ou na aba <em>Ver Prompt</em> no celular).
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/07-painel-prompt-ias.png">
+          <img src="./tutorial/07-painel-prompt-ias.png" alt="Print anotado do painel direito com medidor de qualidade, camadas e atalhos das 32 IAs" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Qualidade do Prompt (0–100%)</strong>
+              <span>Mede em tempo real o quão completo está seu pedido. Clique em <strong>Critérios</strong> para ver dicas de como chegar a 100% (Exemplar).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Camadas e Ajuste Fino</strong>
+              <span>Leia o prompt organizado em blocos com notas explicativas ou clique em <strong>Ajuste fino</strong> para editar qualquer palavra manualmente.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Copiar, Salvar ou Baixar (.md / .txt)</strong>
+              <span>Copie o prompt completo com 1 clique, salve na sua Biblioteca local ou baixe em arquivo de texto.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">4</span>
+            <div>
+              <strong>Abrir direto nas 32 IAs gratuitas</strong>
+              <span>Clique no ícone da IA preferida (ChatGPT, Gemini, Claude, DeepSeek, Qwen, Kimi, Gamma...): o app <strong>copia o prompt automaticamente</strong> e abre a IA — basta dar <strong>Ctrl+V</strong>!</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">5</span>
+            <div>
+              <strong>Checklist de Curadoria Docente (INST-04)</strong>
+              <span>Após gerar o material na IA, use esta lista para conferir BNCC, correção conceitual, acessibilidade e viabilidade na sua sala de aula.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 9. DIRETÓRIO DAS 32 IAS -->
+      <article class="step-card" id="diretorio-ias">
+        <div class="step-head">
+          <div class="step-badge">9</div>
+          <div>
+            <div class="step-kicker">Aba IAs &amp; Links</div>
+            <h2>Diretório das 32 IAs Gratuitas e Links Institucionais</h2>
+            <p>
+              Nesta aba você encontra todas as 32 plataformas de IA com acesso gratuito (incluindo
+              13 IAs chinesas, globais, ferramentas de slides e IA brasileira), com seus ícones e
+              indicação de para que cada uma é melhor.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/09-diretorio-ias.png">
+          <img src="./tutorial/09-diretorio-ias.png" alt="Print anotado do Diretório das 32 IAs Gratuitas com ícones e filtros" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Buscar qualquer IA</strong>
+              <span>Digite o nome da IA (ex.: <em>DeepSeek</em>, <em>Gamma</em>, <em>NotebookLM</em>) ou o uso desejado (ex.: <em>slides</em>, <em>matemática</em>).</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Filtrar por grupo / origem</strong>
+              <span>Alterne rapidamente entre <em>Todas</em>, <em>Globais</em>, <em>IAs Chinesas (13)</em>, <em>Slides &amp; Estudo</em> e <em>Brasil &amp; Acesso Aberto</em>.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Copiar Prompt &amp; Abrir</strong>
+              <span>Com um clique, o seu prompt atual vai para a área de transferência e o site oficial da IA abre em uma nova aba.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 10. BIBLIOTECA -->
+      <article class="step-card" id="biblioteca">
+        <div class="step-head">
+          <div class="step-badge">10</div>
+          <div>
+            <div class="step-kicker">Aba Biblioteca</div>
+            <h2>Minha Biblioteca Local, Favoritos e Backup (.json)</h2>
+            <p>
+              Todos os prompts que você clicar em <em>Salvar versão</em> ficam guardados com
+              privacidade no seu próprio navegador, sem precisar criar conta nem expor dados de
+              alunos.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap" data-zoom="./tutorial/10-biblioteca.png">
+          <img src="./tutorial/10-biblioteca.png" alt="Print anotado da Biblioteca Local com backup, favoritos e reabrir" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Exportar e Importar Backup (.json)</strong>
+              <span>Salve uma cópia de segurança dos seus prompts para levar para outro computador ou compartilhar com colegas da escola.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <strong>Reabrir no construtor</strong>
+              <span>Carrega novamente todos os campos exatamente como estavam para você adaptar para outra turma ou ano.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <strong>Marcar como favorito</strong>
+              <span>Clique na estrela para destacar seus melhores prompts e filtrá-los rapidamente depois.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 11. SMARTPHONE -->
+      <article class="step-card" id="celular">
+        <div class="step-head">
+          <div class="step-badge">11</div>
+          <div>
+            <div class="step-kicker">Experiência Mobile</div>
+            <h2>Usando no Celular (Smartphone)</h2>
+            <p>
+              No celular, o aplicativo se adapta automaticamente para telas estreitas com menu
+              inferior fixo e botões extras no fim do formulário para você não precisar rolar tudo de
+              volta para ver o prompt.
+            </p>
+          </div>
+        </div>
+
+        <figure class="shot-wrap mobile-shot" data-zoom="./tutorial/11-mobile-smartphone.png">
+          <img src="./tutorial/11-mobile-smartphone.png" alt="Print anotado da versão Smartphone mostrando os botões inferiores Configurar Prompt e Ver Prompt" loading="lazy" />
+          <span class="zoom-hint">🔍 Clique para ampliar</span>
+        </figure>
+
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <strong>Trocar entre Configurar Prompt e Ver Prompt</strong>
+              <span>Assim que terminar de preencher o Passo 4 no celular, basta tocar em <strong>Ver Prompt</strong> aqui embaixo: a tela sobe automaticamente para você copiar e enviar para a IA!</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <footer>
+        <div>
+          <strong>PromptDocente · Caderno de Contexto</strong> — Produto Educacional desenvolvido no
+          <strong>PROFCOMP-MA / Universidade Federal do Maranhão (UFMA)</strong>.<br />
+          Adaptado de <em>Geradores de Prompts de AI para Professores</em> (educ.nekoweb.org · MEC RED ID 364756 — © 2025 Sérgio Araújo, CC BY-NC-SA 4.0).
+        </div>
+        <a class="btn btn-pri" href="/">← Voltar e montar meu prompt</a>
+      </footer>
+    </main>
+
+    <!-- Lightbox de ampliação -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Visualização ampliada do print">
+      <button type="button" class="lightbox-close" id="lightboxClose">✕ Fechar</button>
+      <img id="lightboxImg" src="" alt="Print ampliado" />
+    </div>
+
+    <script>
+      // Alternar tema Claro/Escuro respeitando a preferência do App
+      (function () {
+        const saved = localStorage.getItem('cdc.tema');
+        if (saved === 'escuro' || saved === 'claro') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+        const btn = document.getElementById('themeToggle');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'escuro' ? 'claro' : 'escuro';
+            document.documentElement.setAttribute('data-theme', next);
+            try {
+              localStorage.setItem('cdc.tema', next);
+            } catch {}
+          });
+        }
+
+        // Lightbox para ampliar qualquer print
+        const lb = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightboxImg');
+        const lbClose = document.getElementById('lightboxClose');
+
+        document.querySelectorAll('[data-zoom]').forEach((el) => {
+          el.addEventListener('click', () => {
+            const src = el.getAttribute('data-zoom');
+            if (!src || !lb || !lbImg) return;
+            lbImg.setAttribute('src', src);
+            lb.classList.add('open');
+          });
+        });
+
+        const closeLb = () => lb && lb.classList.remove('open');
+        lbClose && lbClose.addEventListener('click', closeLb);
+        lb &&
+          lb.addEventListener('click', (e) => {
+            if (e.target === lb) closeLb();
+          });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeLb();
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -215,7 +215,7 @@ describe('promptBuilder engine', () => {
     expect(stats.estimatedTokens).toBeGreaterThan(stats.words);
   });
 
-  it('injeta fontes anexadas do dispositivo com fundamentação obrigatória no prompt', () => {
+  it('injeta arquivos do dispositivo, links de sites e textos copiados como fontes obrigatórias no prompt', () => {
     const state = {
       ...createInitialPromptState(),
       selectedTemplateIds: ['plano_aula'],
@@ -227,6 +227,7 @@ describe('promptBuilder engine', () => {
       selectedDeviceSources: [
         {
           id: 'src-1',
+          kind: 'file' as const,
           name: 'Computação na Educação Básica: Fundamentos e Práticas',
           fileName: 'computacao_praticas.txt',
           fileExt: 'TXT',
@@ -235,10 +236,21 @@ describe('promptBuilder engine', () => {
         },
         {
           id: 'src-2',
-          name: 'Apostila de Algoritmos',
-          fileName: 'Apostila_Algoritmos.pdf',
-          fileExt: 'PDF',
-          requiresManualAttach: true,
+          kind: 'url' as const,
+          name: 'Portal BNCC Computação',
+          fileName: 'https://portal.mec.gov.br/bncc-computacao',
+          fileExt: 'LINK',
+          url: 'https://portal.mec.gov.br/bncc-computacao',
+          requiresManualAttach: false,
+        },
+        {
+          id: 'src-3',
+          kind: 'text' as const,
+          name: 'Trecho de Artigo Base',
+          fileName: 'Texto copiado (82 caracteres)',
+          fileExt: 'TEXTO',
+          excerpt: 'O pensamento computacional envolve decomposição, abstração, padrões e algoritmos.',
+          requiresManualAttach: false,
         },
       ],
       includeSourceExcerpts: true,
@@ -246,10 +258,12 @@ describe('promptBuilder engine', () => {
 
     const prompt = buildPrompt(state);
 
-    expect(prompt).toContain('Fontes e Materiais Anexados pelo(a) Docente');
+    expect(prompt).toContain('Uso Obrigatório como uma das Fontes');
+    expect(prompt).toContain('uma das fontes centrais de consulta e fundamentação');
     expect(prompt).toContain('computacao_praticas.txt');
-    expect(prompt).toContain('Conteúdo/trecho extraído: Abordagem prática dos pilares');
-    expect(prompt).toContain('Apostila_Algoritmos.pdf');
-    expect(prompt).toContain('arquivo anexado pelo(a) docente');
+    expect(prompt).toContain('[SITE / LINK]');
+    expect(prompt).toContain('https://portal.mec.gov.br/bncc-computacao');
+    expect(prompt).toContain('[TEXTO COPIADO]');
+    expect(prompt).toContain('decomposição, abstração, padrões e algoritmos');
   });
 });

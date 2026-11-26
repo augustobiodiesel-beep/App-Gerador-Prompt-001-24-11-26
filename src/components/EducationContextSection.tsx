@@ -1,11 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
 import {
+  AlignLeft,
   BookCheck,
   Check,
+  ClipboardPaste,
   FilePlus2,
   FileText,
+  Globe,
   GraduationCap,
+  Link2,
   Paperclip,
+  Plus,
   Search,
   Trash2,
   Upload,
@@ -16,7 +21,12 @@ import {
   findStageById,
   OPTIONAL_REFERENCE_DOCUMENTS,
 } from '../data/education';
-import { formatFileSize, readDeviceFile } from '../services/deviceSources';
+import {
+  createTextDeviceSource,
+  createUrlDeviceSources,
+  formatFileSize,
+  readDeviceFile,
+} from '../services/deviceSources';
 import type { DeviceSource, EducationStageId, PromptFormState } from '../types/prompt';
 
 interface EducationContextSectionProps {
@@ -43,6 +53,11 @@ export function EducationContextSection({
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [isReadingFiles, setIsReadingFiles] = useState(false);
+  const [activeInputPanel, setActiveInputPanel] = useState<'none' | 'url' | 'text'>('none');
+  const [urlDraft, setUrlDraft] = useState('');
+  const [urlTitleDraft, setUrlTitleDraft] = useState('');
+  const [textDraft, setTextDraft] = useState('');
+  const [textTitleDraft, setTextTitleDraft] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeStage = findStageById(state.stage);
@@ -59,6 +74,8 @@ export function EducationContextSection({
         item.name.toLowerCase().includes(q) ||
         item.fileName.toLowerCase().includes(q) ||
         item.fileExt.toLowerCase().includes(q) ||
+        (item.url ?? '').toLowerCase().includes(q) ||
+        (item.excerpt ?? '').toLowerCase().includes(q) ||
         (item.authors ?? []).some((a) => a.toLowerCase().includes(q)) ||
         (item.source ?? '').toLowerCase().includes(q)
     );
@@ -79,6 +96,20 @@ export function EducationContextSection({
     onUpdateField('selectedDeviceSources', next);
   };
 
+  const addAndSelectSources = (incoming: DeviceSource[], notifyMsg: string) => {
+    onImportDeviceSources(incoming);
+    const existingKeys = new Set(
+      selectedSources.map((s) => `${s.fileName.toLowerCase()}::${s.name.toLowerCase()}`)
+    );
+    const toAdd = incoming.filter(
+      (s) => !existingKeys.has(`${s.fileName.toLowerCase()}::${s.name.toLowerCase()}`)
+    );
+    if (toAdd.length > 0) {
+      onUpdateField('selectedDeviceSources', [...selectedSources, ...toAdd]);
+    }
+    onNotify(notifyMsg);
+  };
+
   const handleDeviceFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
@@ -93,18 +124,8 @@ export function EducationContextSection({
         imported.push(...parsed);
       }
       if (imported.length > 0) {
-        onImportDeviceSources(imported);
-        // Seleciona automaticamente os arquivos recém-enviados no prompt atual
-        const existingKeys = new Set(
-          selectedSources.map((s) => `${s.fileName.toLowerCase()}::${s.name.toLowerCase()}`)
-        );
-        const toAdd = imported.filter(
-          (s) => !existingKeys.has(`${s.fileName.toLowerCase()}::${s.name.toLowerCase()}`)
-        );
-        if (toAdd.length > 0) {
-          onUpdateField('selectedDeviceSources', [...selectedSources, ...toAdd]);
-        }
-        onNotify(
+        addAndSelectSources(
+          imported,
           imported.length === 1
             ? `Fonte "${imported[0].fileName}" adicionada do dispositivo!`
             : `${imported.length} fontes adicionadas do dispositivo!`
@@ -120,9 +141,50 @@ export function EducationContextSection({
     }
   };
 
+  const handleAddUrlSource = () => {
+    setSourceError(null);
+    try {
+      const created = createUrlDeviceSources(urlDraft, urlTitleDraft);
+      addAndSelectSources(
+        created,
+        created.length === 1
+          ? `Link "${created[0].name}" adicionado como fonte!`
+          : `${created.length} links adicionados como fontes!`
+      );
+      setUrlDraft('');
+      setUrlTitleDraft('');
+      setActiveInputPanel('none');
+    } catch (err) {
+      setSourceError(err instanceof Error ? err.message : 'Endereço/link inválido.');
+    }
+  };
+
+  const handleAddTextSource = () => {
+    setSourceError(null);
+    try {
+      const created = createTextDeviceSource(textDraft, textTitleDraft);
+      addAndSelectSources([created], `Texto "${created.name}" adicionado como fonte!`);
+      setTextDraft('');
+      setTextTitleDraft('');
+      setActiveInputPanel('none');
+    } catch (err) {
+      setSourceError(err instanceof Error ? err.message : 'Não foi possível adicionar o texto.');
+    }
+  };
+
   const hasReadableExcerpts =
     selectedSources.some((s) => Boolean(s.excerpt)) ||
     deviceSourcesLibrary.some((s) => Boolean(s.excerpt));
+
+  const renderSourceIcon = (src: DeviceSource) => {
+    if (src.kind === 'url' || src.url) {
+      return <Globe className="h-3 w-3 shrink-0 text-[var(--teal)]" />;
+    }
+    if (src.kind === 'text') {
+      return <AlignLeft className="h-3 w-3 shrink-0 text-[var(--teal)]" />;
+    }
+    return <FileText className="h-3 w-3 shrink-0 text-[var(--teal)]" />;
+  };
 
   return (
     <section className="ufma-card p-5 sm:p-6">
@@ -155,10 +217,11 @@ export function EducationContextSection({
                 key={stage.id}
                 type="button"
                 onClick={() => onChangeStage(stage.id)}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${active
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                  active
                     ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0] shadow-xs'
                     : 'border-[var(--border)] bg-[var(--surface-solid)] text-[var(--muted)] hover:border-[var(--border-strong)] hover:text-[var(--text)]'
-                  }`}
+                }`}
               >
                 {stage.shortLabel}
               </button>
@@ -285,7 +348,7 @@ export function EducationContextSection({
         </div>
       </div>
 
-      {/* Campo Opcional: Outros documentos + Fontes do Dispositivo */}
+      {/* Campo Opcional: Outros documentos + Fontes (Dispositivo, Links e Textos Copiados) */}
       <div className="ufma-subbox space-y-4 p-4">
         <div>
           <div className="mb-2.5 flex items-start gap-2">
@@ -299,7 +362,7 @@ export function EducationContextSection({
               </label>
               <p className="text-[11px] text-[var(--muted)]">
                 Marque referenciais complementares, escreva o nome de documentos da sua rede/escola
-                ou envie arquivos diretamente do seu <strong>dispositivo</strong> abaixo.
+                ou adicione <strong>arquivos, links de sites ou textos copiados</strong> abaixo.
               </p>
             </div>
           </div>
@@ -313,10 +376,11 @@ export function EducationContextSection({
                   type="button"
                   title={doc.fullReference}
                   onClick={() => toggleExtraDoc(doc.id)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${active
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    active
                       ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-ink)]'
                       : 'border-[var(--border)] bg-[var(--surface-solid)] text-[var(--muted)] hover:border-[var(--border-strong)] hover:text-[var(--text)]'
-                    }`}
+                  }`}
                 >
                   {active ? '✓ ' : '+ '}
                   {doc.label}
@@ -335,58 +399,189 @@ export function EducationContextSection({
           />
         </div>
 
-        {/* Upload de Fontes e Materiais do Dispositivo */}
+        {/* Fontes do Dispositivo, Links de Sites e Textos Copiados */}
         <div className="border-t border-[var(--border)] pt-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2">
               <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
               <div>
                 <span className="text-xs font-bold text-[var(--text)]">
-                  Inserir Fontes do Dispositivo
+                  Inserir Fontes (Dispositivo, Links de Sites ou Textos Copiados)
                 </span>
                 <p className="text-[11px] text-[var(--faint)]">
-                  Envie arquivos do computador ou celular:{' '}
-                  <strong>PDF, Word (.docx), TXT, Markdown, CSV, slides, imagens</strong> ou listas
-                  bibliográficas.
+                  Envie arquivos do computador/celular (<strong>PDF, Word, TXT, imagens...</strong>),
+                  cole <strong>links de sites</strong> ou <strong>textos copiados</strong>. O prompt
+                  instruirá a IA a usar obrigatoriamente essas fontes.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            {deviceSourcesLibrary.length > 0 && (
               <button
                 type="button"
-                disabled={isReadingFiles}
-                onClick={() => fileInputRef.current?.click()}
-                className="ufma-btn inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold disabled:opacity-60"
+                onClick={() => {
+                  onClearDeviceSourcesLibrary();
+                  onUpdateField('selectedDeviceSources', []);
+                  onNotify('Fontes adicionadas removidas deste navegador.');
+                }}
+                title="Limpar todas as fontes adicionadas"
+                className="shrink-0 rounded-full border border-[var(--border)] p-1.5 text-[var(--faint)] hover:border-[var(--bad)] hover:text-[var(--bad)]"
               >
-                <Upload className="h-3.5 w-3.5 text-[var(--accent)]" />
-                {isReadingFiles ? 'Lendo arquivos...' : 'Selecionar do dispositivo'}
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.odt,.txt,.md,.markdown,.csv,.tsv,.html,.htm,.pptx,.ppt,.xlsx,.xls,.json,.bib,.bibtex,.ris,.png,.jpg,.jpeg,.webp"
-                onChange={handleDeviceFilesChange}
-                className="hidden"
-              />
+            )}
+          </div>
 
-              {deviceSourcesLibrary.length > 0 && (
+          {/* 3 botões rápidos: Dispositivo, Link de Site, Texto Copiado */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={isReadingFiles}
+              onClick={() => fileInputRef.current?.click()}
+              className="ufma-btn inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold disabled:opacity-60"
+            >
+              <Upload className="h-3.5 w-3.5 text-[var(--accent)]" />
+              {isReadingFiles ? 'Lendo arquivos...' : 'Selecionar do dispositivo'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.odt,.txt,.md,.markdown,.csv,.tsv,.html,.htm,.pptx,.ppt,.xlsx,.xls,.json,.bib,.bibtex,.ris,.png,.jpg,.jpeg,.webp"
+              onChange={handleDeviceFilesChange}
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                setSourceError(null);
+                setActiveInputPanel((prev) => (prev === 'url' ? 'none' : 'url'));
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeInputPanel === 'url'
+                  ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                  : 'ufma-btn'
+              }`}
+            >
+              <Link2 className="h-3.5 w-3.5 text-[var(--accent)]" />
+              Adicionar link / site
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSourceError(null);
+                setActiveInputPanel((prev) => (prev === 'text' ? 'none' : 'text'));
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeInputPanel === 'text'
+                  ? 'border-[var(--ufma-dourado)] bg-[var(--ufma-vinho)] text-[#FAF5F0]'
+                  : 'ufma-btn'
+              }`}
+            >
+              <ClipboardPaste className="h-3.5 w-3.5 text-[var(--accent)]" />
+              Colar texto como fonte
+            </button>
+          </div>
+
+          {/* Formulário inline: Adicionar Link / Site */}
+          {activeInputPanel === 'url' && (
+            <div className="mt-3 space-y-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-solid)] p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[var(--text)]">
+                  Adicionar endereço(s) / link(s) de site como fonte
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    onClearDeviceSourcesLibrary();
-                    onUpdateField('selectedDeviceSources', []);
-                    onNotify('Fontes do dispositivo removidas deste navegador.');
-                  }}
-                  title="Limpar fontes enviadas do dispositivo"
-                  className="rounded-full border border-[var(--border)] p-1.5 text-[var(--faint)] hover:border-[var(--bad)] hover:text-[var(--bad)]"
+                  onClick={() => setActiveInputPanel('none')}
+                  className="rounded-full p-0.5 text-[var(--faint)] hover:text-[var(--text)]"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              )}
+              </div>
+              <input
+                type="text"
+                value={urlTitleDraft}
+                onChange={(e) => setUrlTitleDraft(e.target.value)}
+                placeholder="Título opcional da fonte (ex.: Portal MEC — BNCC Computação)"
+                className="ufma-input px-3 py-1.5 text-xs"
+              />
+              <textarea
+                rows={2}
+                value={urlDraft}
+                onChange={(e) => setUrlDraft(e.target.value)}
+                placeholder="Cole um ou mais links (um por linha). Ex.: https://basenacionalcomum.mec.gov.br/"
+                className="ufma-input px-3 py-2 text-xs"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveInputPanel('none')}
+                  className="ufma-btn rounded-full px-3 py-1 text-xs font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddUrlSource}
+                  className="ufma-btn-pri inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar link
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Formulário inline: Colar Texto Copiado */}
+          {activeInputPanel === 'text' && (
+            <div className="mt-3 space-y-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-solid)] p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[var(--text)]">
+                  Colar texto copiado como fonte obrigatória
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveInputPanel('none')}
+                  className="rounded-full p-0.5 text-[var(--faint)] hover:text-[var(--text)]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={textTitleDraft}
+                onChange={(e) => setTextTitleDraft(e.target.value)}
+                placeholder="Título opcional da fonte (ex.: Trecho do livro didático / Artigo base)"
+                className="ufma-input px-3 py-1.5 text-xs"
+              />
+              <textarea
+                rows={4}
+                value={textDraft}
+                onChange={(e) => setTextDraft(e.target.value)}
+                placeholder="Cole aqui o texto copiado de um artigo, documento, apostila, notícia ou página da internet..."
+                className="ufma-input px-3 py-2 text-xs"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveInputPanel('none')}
+                  className="ufma-btn rounded-full px-3 py-1 text-xs font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddTextSource}
+                  className="ufma-btn-pri inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar texto
+                </button>
+              </div>
+            </div>
+          )}
 
           {sourceError && (
             <p className="mt-2 rounded-lg border border-[var(--bad)] bg-[color-mix(in_srgb,var(--bad)_12%,transparent)] px-3 py-1.5 text-xs text-[var(--text)]">
@@ -396,31 +591,39 @@ export function EducationContextSection({
 
           {/* Fontes selecionadas para o prompt atual */}
           {selectedSources.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {selectedSources.map((src) => (
-                <span
-                  key={src.id}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[var(--teal)] bg-[color-mix(in_srgb,var(--teal)_16%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text)]"
-                >
-                  <FileText className="h-3 w-3 shrink-0 text-[var(--teal)]" />
-                  <span className="max-w-[260px] truncate">
-                    {src.fileName}
-                    {src.sizeBytes ? ` (${formatFileSize(src.sizeBytes)})` : ''}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toggleDeviceSource(src)}
-                    aria-label={`Remover ${src.fileName}`}
-                    className="rounded-full p-0.5 hover:bg-black/15"
+            <div className="mt-3 space-y-1.5">
+              <div className="flex flex-wrap gap-1.5">
+                {selectedSources.map((src) => (
+                  <span
+                    key={src.id}
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[var(--teal)] bg-[color-mix(in_srgb,var(--teal)_16%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text)]"
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
+                    {renderSourceIcon(src)}
+                    <span className="max-w-[260px] truncate">
+                      {src.kind === 'url' || src.kind === 'text' ? src.name : src.fileName}
+                      {src.sizeBytes ? ` (${formatFileSize(src.sizeBytes)})` : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleDeviceSource(src)}
+                      aria-label={`Remover ${src.name}`}
+                      className="rounded-full p-0.5 hover:bg-black/15"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] font-medium text-[var(--teal)]">
+                ✓ {selectedSources.length}{' '}
+                {selectedSources.length === 1
+                  ? 'fonte ativa — o prompt mandará a IA utilizá-la como uma das fontes obrigatórias.'
+                  : 'fontes ativas — o prompt mandará a IA utilizá-las como fontes obrigatórias.'}
+              </p>
             </div>
           )}
 
-          {/* Lista pesquisável de arquivos carregados do dispositivo */}
+          {/* Lista pesquisável de fontes carregadas (arquivos, links e textos) */}
           {deviceSourcesLibrary.length > 0 && (
             <div className="mt-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -431,7 +634,7 @@ export function EducationContextSection({
                       type="text"
                       value={sourceSearch}
                       onChange={(e) => setSourceSearch(e.target.value)}
-                      placeholder={`Filtrar ${deviceSourcesLibrary.length} fonte(s) enviada(s)...`}
+                      placeholder={`Filtrar ${deviceSourcesLibrary.length} fonte(s) adicionada(s)...`}
                       className="ufma-input py-1.5 pr-3 pl-8 text-xs"
                     />
                   </div>
@@ -445,12 +648,12 @@ export function EducationContextSection({
                       onChange={(e) => onUpdateField('includeSourceExcerpts', e.target.checked)}
                       className="h-3.5 w-3.5 accent-[var(--teal)]"
                     />
-                    Incluir conteúdo/trechos lidos no prompt
+                    Incluir textos/conteúdos extraídos no prompt
                   </label>
                 )}
               </div>
 
-              <div className="custom-scrollbar max-h-44 space-y-1.5 overflow-y-auto pr-1">
+              <div className="custom-scrollbar max-h-48 space-y-1.5 overflow-y-auto pr-1">
                 {filteredSources.map((src) => {
                   const selected = selectedSources.some((item) => item.id === src.id);
                   return (
@@ -458,16 +661,18 @@ export function EducationContextSection({
                       key={src.id}
                       type="button"
                       onClick={() => toggleDeviceSource(src)}
-                      className={`flex w-full items-start gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-all ${selected
+                      className={`flex w-full items-start gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-all ${
+                        selected
                           ? 'border-[var(--teal)] bg-[color-mix(in_srgb,var(--teal)_14%,var(--surface-2))] text-[var(--text)]'
                           : 'border-[var(--border)] bg-[var(--surface-solid)] text-[var(--text)] hover:border-[var(--accent)]'
-                        }`}
+                      }`}
                     >
                       <span
-                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                          selected
                             ? 'border-[var(--teal)] bg-[var(--teal)] text-white'
                             : 'border-[var(--border-strong)]'
-                          }`}
+                        }`}
                       >
                         {selected && <Check className="h-3 w-3" />}
                       </span>
@@ -480,12 +685,16 @@ export function EducationContextSection({
                             {src.name}
                           </p>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-[var(--muted)]">
-                          {src.fileName}
-                          {src.sizeBytes ? ` · ${formatFileSize(src.sizeBytes)}` : ''}
-                          {src.excerpt
-                            ? ' · conteúdo extraído automaticamente'
-                            : ' · anexe este arquivo junto ao prompt na IA'}
+                        <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
+                          {src.kind === 'url' || src.url
+                            ? src.url
+                            : src.kind === 'text'
+                              ? `${src.fileName} · inserido diretamente no prompt`
+                              : `${src.fileName}${src.sizeBytes ? ` · ${formatFileSize(src.sizeBytes)}` : ''}${
+                                  src.excerpt
+                                    ? ' · conteúdo extraído automaticamente'
+                                    : ' · anexe este arquivo junto ao prompt na IA'
+                                }`}
                         </p>
                       </div>
                     </button>

@@ -5,7 +5,9 @@ import {
   Calendar,
   CheckCircle2,
   Code2,
+  ExternalLink,
   Globe,
+  GraduationCap,
   Layers,
   Lightbulb,
   Presentation,
@@ -104,6 +106,40 @@ export function HomeView({
               <Globe className="h-4 w-4 text-[var(--teal)]" />
               {FREE_AI_PLATFORMS.length} IAs Gratuitas
             </button>
+          </div>
+
+          {/* Destaque especial: Tutorialzinho Top */}
+          <div className="mt-4">
+            <a
+              href="/tutorialzinho-top.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-tutorial-target="tutorialzinho-top"
+              className="group relative flex max-w-xl items-center justify-between gap-3 rounded-2xl border-2 border-[#D4B277] bg-gradient-to-r from-[#8D0333] via-[#700229] to-[#4A0620] px-4 py-3 text-[#FAF5F0] shadow-[0_10px_28px_-10px_rgba(141,3,51,0.7)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#FEC84D] hover:shadow-[0_14px_32px_-8px_rgba(254,200,77,0.45)]"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#FEC84D]/60 bg-[#FEC84D]/15 text-[#FEC84D]">
+                  <GraduationCap className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-display text-sm font-extrabold tracking-tight text-[#FEC84D] sm:text-base">
+                      Tutorialzinho Top
+                    </span>
+                    <span className="rounded-full bg-[#FEC84D] px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-[#4A0620] uppercase">
+                      Guia Ilustrado
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-[#FAF5F0]/90">
+                    Aprenda a usar cada botão do App passo a passo, com prints e setas explicativas.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#FEC84D]/50 bg-[#FEC84D]/15 px-3 py-1.5 text-xs font-bold text-[#FEC84D] transition-transform group-hover:translate-x-0.5">
+                Abrir
+                <ExternalLink className="h-3.5 w-3.5" />
+              </span>
+            </a>
           </div>
 
           {/* Exemplos rápidos logo abaixo do Hero */}

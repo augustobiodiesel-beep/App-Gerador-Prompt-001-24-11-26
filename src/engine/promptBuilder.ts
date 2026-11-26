@@ -271,9 +271,9 @@ function buildFixedOfficialCurriculumCommand(state: PromptFormState, compact = f
         : '';
     const sourcesClause =
       deviceSources.length > 0
-        ? ` Utilize como base também as seguintes fontes enviadas pelo(a) docente a partir do seu dispositivo (cite fielmente quando cabível e nunca invente obras ou dados ausentes): ${deviceSources
-            .map((s) => formatDeviceSourceForPrompt(s, includeExcerpts))
-            .join(' || ')}.`
+        ? ` FONTES OBRIGATÓRIAS ADICIONADAS PELO(A) DOCENTE: Utilize obrigatoriamente como uma das fontes centrais de consulta e fundamentação os seguintes arquivos, textos copiados e/ou endereços/links de sites adicionados pelo(a) docente (consulte os links indicados quando tiver acesso à web, incorpore fielmente os textos colados, cite as fontes utilizadas e nunca invente dados ou links ausentes): ${deviceSources
+          .map((s) => formatDeviceSourceForPrompt(s, includeExcerpts))
+          .join(' || ')}.`
         : '';
 
     return (
@@ -304,13 +304,13 @@ function buildFixedOfficialCurriculumCommand(state: PromptFormState, compact = f
 
   if (deviceSources.length > 0) {
     lines.push(
-      '- **Fontes e Materiais Anexados pelo(a) Docente (fundamentação obrigatória):**'
+      '- **Fontes Adicionadas pelo(a) Docente — Uso Obrigatório como uma das Fontes (arquivos do dispositivo, textos copiados e/ou links de sites):**'
     );
     for (const src of deviceSources) {
       lines.push(`  - ${formatDeviceSourceForPrompt(src, includeExcerpts)}`);
     }
     lines.push(
-      '- Utilize estas fontes reais como base conceitual e didática do material, citando-as adequadamente quando pertinente e nunca inventando citações, dados ou autores fora das fontes informadas.'
+      '- **Diretriz obrigatória sobre as fontes adicionadas**: utilize obrigatoriamente os arquivos, textos copiados e/ou endereços/links de sites listados acima como **uma das fontes centrais de consulta e fundamentação** do material gerado. Consulte os links indicados (ou sinalize caso não tenha acesso à web), incorpore fielmente os textos colados, referencie as fontes utilizadas e jamais invente citações, dados ou URLs fora das fontes informadas.'
     );
   }
 
@@ -445,6 +445,15 @@ export function buildEditorialSlidePrompt(state: PromptFormState): string {
   if (cfg.alignWithBncc) {
     contentLines.push(`- Contexto escolar: ${stageLabel} (${yearLabel}) — ${componentLabel}`);
     contentLines.push(`- ${buildFixedOfficialCurriculumCommand(state, true)}`);
+  } else if ((state.selectedDeviceSources ?? []).length > 0) {
+    const includeExcerpts = state.includeSourceExcerpts !== false;
+    contentLines.push(
+      `- FONTES OBRIGATÓRIAS ADICIONADAS PELO(A) DOCENTE: Utilize obrigatoriamente como uma das fontes centrais de consulta e fundamentação: ${(
+        state.selectedDeviceSources ?? []
+      )
+        .map((s) => formatDeviceSourceForPrompt(s, includeExcerpts))
+        .join(' || ')}.`
+    );
   }
 
   contentLines.push(`- Material de base (se houver): ${baseMaterialText}`);

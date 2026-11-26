@@ -117,10 +117,12 @@ export interface SlidePromptConfig {
 
 export interface DeviceSource {
   id: string;
+  kind?: 'file' | 'url' | 'text';
   name: string;
   fileName: string;
   fileExt: string;
   sizeBytes?: number;
+  url?: string;
   authors?: string[];
   year?: string;
   source?: string;
