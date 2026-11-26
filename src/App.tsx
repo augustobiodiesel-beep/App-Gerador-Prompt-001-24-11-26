@@ -20,19 +20,19 @@ import {
   resolveSelectedTemplates,
 } from './engine/promptBuilder';
 import {
+  loadDeviceSourcesLibrary,
   loadSavedPrompts,
-  loadZoteroLibrary,
+  persistDeviceSourcesLibrary,
   persistSavedPrompts,
-  persistZoteroLibrary,
 } from './services/storage';
 import type {
   DemoPreset,
+  DeviceSource,
   EducationStageId,
   PromptFormState,
   ResourceCategoryId,
   SavedPrompt,
   SlidePromptConfig,
-  ZoteroReference,
 } from './types/prompt';
 
 function getInitialTheme(): ThemeMode {
@@ -50,7 +50,9 @@ export function App() {
   const [state, setState] = useState<PromptFormState>(() => createInitialPromptState());
   const [manualPromptText, setManualPromptText] = useState<string | null>(null);
   const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>(() => loadSavedPrompts());
-  const [zoteroLibrary, setZoteroLibrary] = useState<ZoteroReference[]>(() => loadZoteroLibrary());
+  const [deviceSourcesLibrary, setDeviceSourcesLibrary] = useState<DeviceSource[]>(() =>
+    loadDeviceSourcesLibrary()
+  );
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
@@ -78,14 +80,16 @@ export function App() {
   }, [savedPrompts]);
 
   useEffect(() => {
-    persistZoteroLibrary(zoteroLibrary);
-  }, [zoteroLibrary]);
+    persistDeviceSourcesLibrary(deviceSourcesLibrary);
+  }, [deviceSourcesLibrary]);
 
-  const handleImportZoteroRefs = (incoming: ZoteroReference[]) => {
-    setZoteroLibrary((prev) => {
-      const existing = new Set(prev.map((r) => `${r.title.toLowerCase()}::${r.year ?? ''}`));
+  const handleImportDeviceSources = (incoming: DeviceSource[]) => {
+    setDeviceSourcesLibrary((prev) => {
+      const existing = new Set(
+        prev.map((r) => `${r.fileName.toLowerCase()}::${r.name.toLowerCase()}`)
+      );
       const fresh = incoming.filter(
-        (r) => !existing.has(`${r.title.toLowerCase()}::${r.year ?? ''}`)
+        (r) => !existing.has(`${r.fileName.toLowerCase()}::${r.name.toLowerCase()}`)
       );
       return [...fresh, ...prev];
     });
@@ -296,7 +300,7 @@ export function App() {
       templateId: normalizedIds[0] ?? '',
       selectedExtraDocs: cloned.selectedExtraDocs ?? [],
       additionalDocuments: cloned.additionalDocuments ?? '',
-      selectedZoteroRefs: cloned.selectedZoteroRefs ?? [],
+      selectedDeviceSources: cloned.selectedDeviceSources ?? [],
     });
     setManualPromptText(item.isManuallyEdited ? item.promptText : null);
     setMobilePanel('form');
@@ -407,9 +411,9 @@ export function App() {
                 <EducationContextSection
                   state={state}
                   isEditorialSlides={hasSlides}
-                  zoteroLibrary={zoteroLibrary}
-                  onImportZoteroRefs={handleImportZoteroRefs}
-                  onClearZoteroLibrary={() => setZoteroLibrary([])}
+                  deviceSourcesLibrary={deviceSourcesLibrary}
+                  onImportDeviceSources={handleImportDeviceSources}
+                  onClearDeviceSourcesLibrary={() => setDeviceSourcesLibrary([])}
                   onChangeStage={handleChangeStage}
                   onUpdateField={updateField}
                   onNotify={notify}
@@ -469,9 +473,6 @@ export function App() {
                   isEditorialSlides={isEditorialSlidesOnly}
                   quality={quality}
                   templateName={templateSummaryName}
-                  stageLabel={activeStage?.shortLabel ?? 'Educação Básica'}
-                  componentName={state.component}
-                  topic={state.topic}
                   onManualChange={(val) => setManualPromptText(val)}
                   onResetManualEdit={() => setManualPromptText(null)}
                   onSavePrompt={handleSavePrompt}

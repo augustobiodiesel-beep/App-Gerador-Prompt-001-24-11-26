@@ -1,23 +1,23 @@
-import type { SavedPrompt, ZoteroReference } from '../types/prompt';
+import type { DeviceSource, SavedPrompt } from '../types/prompt';
 
 const STORAGE_KEY = 'promptdocente_library_v1';
-const ZOTERO_STORAGE_KEY = 'promptdocente_zotero_refs_v1';
+const DEVICE_SOURCES_STORAGE_KEY = 'promptdocente_device_sources_v1';
 
-export function loadZoteroLibrary(): ZoteroReference[] {
+export function loadDeviceSourcesLibrary(): DeviceSource[] {
   try {
-    const raw = window.localStorage.getItem(ZOTERO_STORAGE_KEY);
+    const raw = window.localStorage.getItem(DEVICE_SOURCES_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as ZoteroReference[];
+    return parsed as DeviceSource[];
   } catch {
     return [];
   }
 }
 
-export function persistZoteroLibrary(refs: ZoteroReference[]): void {
+export function persistDeviceSourcesLibrary(sources: DeviceSource[]): void {
   try {
-    window.localStorage.setItem(ZOTERO_STORAGE_KEY, JSON.stringify(refs));
+    window.localStorage.setItem(DEVICE_SOURCES_STORAGE_KEY, JSON.stringify(sources));
   } catch {
     // Ignore storage quota errors gracefully
   }

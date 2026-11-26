@@ -215,7 +215,7 @@ describe('promptBuilder engine', () => {
     expect(stats.estimatedTokens).toBeGreaterThan(stats.words);
   });
 
-  it('injeta referências importadas do Zotero com fundamentação obrigatória no prompt', () => {
+  it('injeta fontes anexadas do dispositivo com fundamentação obrigatória no prompt', () => {
     const state = {
       ...createInitialPromptState(),
       selectedTemplateIds: ['plano_aula'],
@@ -224,25 +224,32 @@ describe('promptBuilder engine', () => {
       yearOrTrack: '8º ano',
       component: 'Computação / Pensamento Computacional (BNCC)',
       topic: 'Pensamento Computacional Desplugado',
-      selectedZoteroRefs: [
+      selectedDeviceSources: [
         {
-          id: 'zot-1',
-          title: 'Computação na Educação Básica: Fundamentos e Práticas',
-          authors: ['Brackmann, Christian'],
-          year: '2024',
-          source: 'Editora UFMA',
-          abstractNote: 'Abordagem prática dos pilares do Pensamento Computacional.',
+          id: 'src-1',
+          name: 'Computação na Educação Básica: Fundamentos e Práticas',
+          fileName: 'computacao_praticas.txt',
+          fileExt: 'TXT',
+          excerpt: 'Abordagem prática dos pilares do Pensamento Computacional.',
+          requiresManualAttach: false,
+        },
+        {
+          id: 'src-2',
+          name: 'Apostila de Algoritmos',
+          fileName: 'Apostila_Algoritmos.pdf',
+          fileExt: 'PDF',
+          requiresManualAttach: true,
         },
       ],
-      includeZoteroAbstracts: true,
+      includeSourceExcerpts: true,
     };
 
     const prompt = buildPrompt(state);
 
-    expect(prompt).toContain('Referências Bibliográficas do Zotero do(a) Docente');
-    expect(prompt).toContain('Brackmann, Christian (2024)');
-    expect(prompt).toContain('Computação na Educação Básica: Fundamentos e Práticas');
-    expect(prompt).toContain('Resumo/Síntese: Abordagem prática dos pilares');
-    expect(prompt).toContain('padrão ABNT');
+    expect(prompt).toContain('Fontes e Materiais Anexados pelo(a) Docente');
+    expect(prompt).toContain('computacao_praticas.txt');
+    expect(prompt).toContain('Conteúdo/trecho extraído: Abordagem prática dos pilares');
+    expect(prompt).toContain('Apostila_Algoritmos.pdf');
+    expect(prompt).toContain('arquivo anexado pelo(a) docente');
   });
 });

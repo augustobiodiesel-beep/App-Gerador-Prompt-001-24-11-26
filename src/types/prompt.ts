@@ -115,18 +115,17 @@ export interface SlidePromptConfig {
   alignWithBncc: boolean;
 }
 
-export interface ZoteroReference {
+export interface DeviceSource {
   id: string;
-  title: string;
-  authors: string[];
+  name: string;
+  fileName: string;
+  fileExt: string;
+  sizeBytes?: number;
+  authors?: string[];
   year?: string;
-  itemType?: string;
   source?: string;
-  abstractNote?: string;
-  url?: string;
-  doi?: string;
-  tags?: string[];
-  notes?: string;
+  excerpt?: string;
+  requiresManualAttach?: boolean;
 }
 
 export interface PromptFormState {
@@ -139,8 +138,8 @@ export interface PromptFormState {
   topic: string;
   selectedExtraDocs: string[];
   additionalDocuments: string;
-  selectedZoteroRefs: ZoteroReference[];
-  includeZoteroAbstracts: boolean;
+  selectedDeviceSources: DeviceSource[];
+  includeSourceExcerpts: boolean;
   bloomLevel: BloomLevelId;
   methodology: string;
   tone: string;

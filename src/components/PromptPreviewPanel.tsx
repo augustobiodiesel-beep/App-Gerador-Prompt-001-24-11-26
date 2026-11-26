@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { FREE_AI_PLATFORMS, type AIPlatformGroup } from '../data/aiPlatforms';
 import { estimatePromptStats, splitPromptIntoLayers } from '../engine/promptBuilder';
-import { exportPromptToRis } from '../services/zoteroParser';
 import type { PromptQualityAnalysis } from '../types/prompt';
 import { AiIcon } from './AiIcon';
 
@@ -29,9 +28,6 @@ interface PromptPreviewPanelProps {
   isEditorialSlides: boolean;
   quality: PromptQualityAnalysis;
   templateName: string;
-  stageLabel: string;
-  componentName: string;
-  topic: string;
   onManualChange: (value: string) => void;
   onResetManualEdit: () => void;
   onSavePrompt: (customTitle: string) => void;
@@ -83,9 +79,6 @@ export function PromptPreviewPanel({
   isEditorialSlides,
   quality,
   templateName,
-  stageLabel,
-  componentName,
-  topic,
   onManualChange,
   onResetManualEdit,
   onSavePrompt,
@@ -155,18 +148,8 @@ export function PromptPreviewPanel({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDownload = (ext: 'md' | 'txt' | 'ris') => {
-    const content =
-      ext === 'ris'
-        ? exportPromptToRis({
-          title: topic.trim() ? `${templateName}: ${topic.trim()}` : `${templateName} (${stageLabel})`,
-          stageLabel,
-          component: componentName,
-          templateName,
-          promptText,
-        })
-        : promptText;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const handleDownload = (ext: 'md' | 'txt') => {
+    const blob = new Blob([promptText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const safeName = templateName
@@ -179,11 +162,7 @@ export function PromptPreviewPanel({
     a.download = `prompt-${safeName || 'pedagogico'}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
-    onNotify(
-      ext === 'ris'
-        ? 'Arquivo .ris baixado — abra ou importe no Zotero!'
-        : `Arquivo .${ext} baixado!`
-    );
+    onNotify(`Arquivo .${ext} baixado!`);
   };
 
   const handleConfirmSave = (e: React.FormEvent) => {
@@ -429,15 +408,6 @@ export function PromptPreviewPanel({
               >
                 <Download className="h-3 w-3" />
                 Baixar .txt
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDownload('ris')}
-                title="Baixar registro bibliográfico (.ris) para importar no Zotero"
-                className="ufma-btn inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold"
-              >
-                <Download className="h-3 w-3 text-[var(--accent)]" />
-                Zotero .ris
               </button>
             </div>
 

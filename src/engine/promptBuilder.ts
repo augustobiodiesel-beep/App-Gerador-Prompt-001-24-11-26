@@ -10,7 +10,7 @@ import {
   SLIDE_PALETTE_OPTIONS,
   SLIDE_TYPOGRAPHY_OPTIONS,
 } from '../data/templates';
-import { formatZoteroReferenceForPrompt } from '../services/zoteroParser';
+import { formatDeviceSourceForPrompt } from '../services/deviceSources';
 import type {
   PromptFormState,
   PromptQualityAnalysis,
@@ -250,8 +250,8 @@ function buildFixedOfficialCurriculumCommand(state: PromptFormState, compact = f
       state.component
     );
   const extraDocs = resolveAdditionalDocuments(state);
-  const zoteroRefs = state.selectedZoteroRefs ?? [];
-  const includeAbstracts = state.includeZoteroAbstracts !== false;
+  const deviceSources = state.selectedDeviceSources ?? [];
+  const includeExcerpts = state.includeSourceExcerpts !== false;
 
   const baseDoc = stage
     ? stage.officialDocument
@@ -269,18 +269,18 @@ function buildFixedOfficialCurriculumCommand(state: PromptFormState, compact = f
       extraDocs.length > 0
         ? ` Consulte também os seguintes documentos complementares solicitados pelo(a) docente: ${extraDocs.join('; ')}.`
         : '';
-    const zoteroClause =
-      zoteroRefs.length > 0
-        ? ` Fundamente o conteúdo também nas seguintes referências reais importadas da biblioteca Zotero do(a) docente (cite em padrão ABNT quando cabível e nunca invente obras): ${zoteroRefs
-          .map((r) => formatZoteroReferenceForPrompt(r, includeAbstracts))
-          .join(' || ')}.`
+    const sourcesClause =
+      deviceSources.length > 0
+        ? ` Utilize como base também as seguintes fontes enviadas pelo(a) docente a partir do seu dispositivo (cite fielmente quando cabível e nunca invente obras ou dados ausentes): ${deviceSources
+            .map((s) => formatDeviceSourceForPrompt(s, includeExcerpts))
+            .join(' || ')}.`
         : '';
 
     return (
       `COMANDO FIXO DE ALINHAMENTO CURRICULAR OFICIAL: Antes de produzir o material, leia e consulte o documento oficial da ${primaryDoc} (${docUrl}) para a etapa "${stageLabel}" (${yearLabel}) e componente "${componentLabel}". ` +
       `Selecione automaticamente as Competências Gerais, Competências Específicas e Habilidades (com códigos alfanuméricos oficiais e descrições fiéis) que mais se adequam ao tema e ao pedido acima, justificando brevemente a escolha. Nunca invente códigos inexistentes — caso não tenha certeza de algum código exato, indique o texto da habilidade e sinalize para conferência docente.` +
       extraClause +
-      zoteroClause
+      sourcesClause
     );
   }
 
@@ -302,15 +302,15 @@ function buildFixedOfficialCurriculumCommand(state: PromptFormState, compact = f
     );
   }
 
-  if (zoteroRefs.length > 0) {
+  if (deviceSources.length > 0) {
     lines.push(
-      '- **Referências Bibliográficas do Zotero do(a) Docente (fundamentação teórica e conceitual obrigatória):**'
+      '- **Fontes e Materiais Anexados pelo(a) Docente (fundamentação obrigatória):**'
     );
-    for (const ref of zoteroRefs) {
-      lines.push(`  - ${formatZoteroReferenceForPrompt(ref, includeAbstracts)}`);
+    for (const src of deviceSources) {
+      lines.push(`  - ${formatDeviceSourceForPrompt(src, includeExcerpts)}`);
     }
     lines.push(
-      '- Utilize estas referências reais como base conceitual do material, citando-as em padrão ABNT quando pertinente ao recurso e nunca inventando citações ou autores fora das obras informadas.'
+      '- Utilize estas fontes reais como base conceitual e didática do material, citando-as adequadamente quando pertinente e nunca inventando citações, dados ou autores fora das fontes informadas.'
     );
   }
 
@@ -524,8 +524,8 @@ export function buildPedagogicalPrompt(state: PromptFormState): string {
       : selectedTemplates.length === 1
         ? selectedTemplates[0].name
         : `Conjunto articulado com ${selectedTemplates.length} recursos: ${selectedTemplates
-            .map((t) => t.name)
-            .join(' + ')}`;
+          .map((t) => t.name)
+          .join(' + ')}`;
 
   const objectiveDirective =
     `Sempre que cabível ao(s) recurso(s) solicitado(s) (${resourceSummary}), formule explicitamente os **Objetivos de Aprendizagem** claros, observáveis e mensuráveis, alinhados às competências/habilidades selecionadas do documento oficial e à progressão cognitiva da Taxonomia de Bloom Revisada (ou, em documentos estritamente institucionais, a finalidade pedagógica/institucional). Conduza toda a elaboração do material com **intencionalidade pedagógica** explícita, garantindo coerência rigorosa entre objetivos, desenvolvimento, mediação e evidências/verificação da aprendizagem.`;
@@ -704,9 +704,8 @@ export function buildPedagogicalPrompt(state: PromptFormState): string {
   const outputLines = [
     `# ${nextStepNum}. Formato de Saída e Critérios de Qualidade`,
     '- **Idioma**: Português do Brasil (adequado à realidade escolar brasileira).',
-    `- **Formato**: ${
-      state.outputFormat.trim() ||
-      'Documento estruturado em Markdown com títulos claros, tabelas e listas prontas para uso docente ou impressão'
+    `- **Formato**: ${state.outputFormat.trim() ||
+    'Documento estruturado em Markdown com títulos claros, tabelas e listas prontas para uso docente ou impressão'
     }.`,
     '- **Rigor e veracidade**: não invente dados estatísticos, citações bibliográficas ou códigos oficiais inexistentes; caso sugira referências externas, sinalize para conferência docente.',
   ];
